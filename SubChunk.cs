@@ -123,12 +123,12 @@ namespace BuildPlate_Editor
         public void Render(Shader s)
         {
             Matrix4 transform = Matrix4.CreateTranslation(new Vector3(pos.X * VoxelData.ChunkWidth, pos.Y * VoxelData.ChunkHeight, pos.Z * VoxelData.ChunkWidth));
-            //transform *= Matrix4.CreateRotationX(-90f);
+            
             s.Bind();
             s.UploadMat4("uTransform", ref transform);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2DArray, texId);
-            GL.Uniform1(5, 1);
+            s.UploadInt("textures", 1);
 
             GL.BindVertexArray(vao);
             GL.DrawElements(BeginMode.Triangles, triangles.Count, DrawElementsType.UnsignedInt, 0);

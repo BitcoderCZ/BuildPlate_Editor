@@ -49,17 +49,19 @@ namespace BuildPlate_Editor
             try { version = OpenGLHelper.GetVersion(); } catch { version = "Failed to get version"; }
             Console.WriteLine($"OpenGL version: {version}, Min: 4.5.0");
             if (int.TryParse(version.Split(' ')[0].Split('.')[0], out int mainVer))
-                if (mainVer < 4) {
-                    Console.WriteLine("OpenGL version to low. Press any key to exit...");
-                    Console.ReadKey(true);
-                    Environment.Exit(2);
-                }
-                else if (int.TryParse(version.Split(' ')[0].Split('.')[1], out int subVer) && mainVer == 4 && subVer < 5) {
-                    Console.WriteLine("OpenGL version to low. Press any key to exit...");
-                    Console.ReadKey(true);
-                    Environment.Exit(2);
-                }
+                if (mainVer < 4)
+                    LowVersion();
+                else if (int.TryParse(version.Split(' ')[0].Split('.')[1], out int subVer) && mainVer == 4 && subVer < 5)
+                    LowVersion();
             Window.Run(60d);
+        }
+
+        private static void LowVersion()
+        {
+            Console.WriteLine("OpenGL version is low. The editor might not work correctly");
+            Console.WriteLine("Press ENTER to continue anyway...");
+            if (Console.ReadKey(true).Key != ConsoleKey.Enter)
+                Environment.Exit(2);
         }
     }
 }

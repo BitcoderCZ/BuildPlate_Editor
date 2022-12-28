@@ -54,7 +54,7 @@ namespace BuildPlate_Editor
                     Console.ReadKey(true);
                     Environment.Exit(2);
                 }
-                else if (int.TryParse(version.Split(' ')[0].Split('.')[1], out int subVer) && mainVer >= 4 && subVer < 5) {
+                else if (int.TryParse(version.Split(' ')[0].Split('.')[1], out int subVer) && mainVer == 4 && subVer < 5) {
                     Console.WriteLine("OpenGL version to low. Press any key to exit...");
                     Console.ReadKey(true);
                     Environment.Exit(2);

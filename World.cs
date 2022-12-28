@@ -638,12 +638,18 @@ namespace BuildPlate_Editor
 
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)vertices.Count;
-                        if (p == 2 || p == 3) { // top, bottom
+                        if (p == 2) { // top
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texTop));
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texTop));
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texTop));
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texTop));
-                        } else {
+                        } else if (p == 3) { // bottom
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texBottom));
+                        }
+                        else {
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, uvs[0], texSide));
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, uvs[1], texSide));
                             vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, uvs[2], texSide));

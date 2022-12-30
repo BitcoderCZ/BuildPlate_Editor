@@ -1,10 +1,12 @@
 ﻿using BuildPlate_Editor.Maths;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenTK;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -96,6 +98,24 @@ namespace BuildPlate_Editor
             }
         }
 
+        public static void CubeTex(int _tex, Vector3 pos, Vector3 size, ref List<Vertex> verts, ref List<uint> tris, Vector2[] uvs)
+        {
+            uint tex = (uint)_tex;
+            for (int p = 0; p < 6; p++) {
+                uint firstVertIndex = (uint)verts.Count;
+                verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] * size - size / 2f, uvs[0], tex));
+                verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] * size - size / 2f, uvs[1], tex));
+                verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] * size - size / 2f, uvs[2], tex));
+                verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] * size - size / 2f, uvs[3], tex));
+                tris.Add(firstVertIndex);
+                tris.Add(firstVertIndex + 1);
+                tris.Add(firstVertIndex + 2);
+                tris.Add(firstVertIndex + 2);
+                tris.Add(firstVertIndex + 1);
+                tris.Add(firstVertIndex + 3);
+            }
+        }
+
         public static T2[] ForArray<T1, T2>(this IEnumerator<T1> e, Func<T1, T2> func)
         {
             List<T2> list = new List<T2>();
@@ -118,6 +138,33 @@ namespace BuildPlate_Editor
             T[] newArray = new T[array.Length];
             Array.Copy(array, newArray, array.Length);
             return newArray;
+        }
+
+        public static Vector2 Swaped(this Vector2 v) => new Vector2(v.Y, v.X);
+
+        // needs admin
+        public static void SetAssociationWithExtension(string Extension, string key, string OpenWith, string FileDescription)
+        {
+            /*Key: HKLM\SOFTWARE\Classes\.foo
+Value: <default> = “Foo.Document”
+
+Key: HKLM\SOFTWARE\Classes\Foo.Document
+Value: <default> = “Foo Document”
+
+Key: HKLM\SOFTWARE\Classes\Foo.Document\shell\open\command
+Value: <default> = “[blah.exe]” “%1″*/
+            RegistryKey key1 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{Extension}");
+            key1.SetValue("", $"{Extension.Replace(".", "")}.Document");
+            key1.Flush();
+            RegistryKey key2 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{key}.Document");
+            key2.SetValue("", FileDescription);
+            key2.Flush();
+            RegistryKey key3 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{key}.Document\Shell\Open\Command");
+            key3.SetValue("", $"{OpenWith} %1");
+            key3.Flush();
+            RegistryKey key4 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{key}.Document\Shell\Edit\Command");
+            key4.SetValue("", $"{OpenWith} %1");
+            key4.Flush();
         }
     }
 }

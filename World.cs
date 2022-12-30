@@ -23,7 +23,6 @@ namespace BuildPlate_Editor
             { "tnt", new []{ "tnt_side" } },
             { "lava", new []{ "lava_still" } },
             { "water", new []{ "water_still" } },
-            { "stained_glass_pane", new []{ "white_stained_glass" } },
             { "cobblestone_wall", new []{ "cobblestone" } },
             // slabs
             { "double_wooden_slab", new []{ "planks" } },
@@ -36,8 +35,11 @@ namespace BuildPlate_Editor
             { "spruce_stairs", new []{ "planks_spruce" } },
             { "stone_brick_stairs", new []{ "stonebrick" } },
             { "polished_andesite_stairs", new []{ "stone_andesite_smooth" } },
+            // terracotta
+            { "yellow_glazed_terracotta", new []{ "glazed_terracotta_yellow" } },
             // other
             { "carpet", new []{ "wool" } },
+            { "packed_ice", new []{ "ice_packed" } },
             { "rainbow_wool", new []{ "rainbow_wool_a" } },
             { "rainbow_carpet", new []{ "rainbow_wool_a" } },
             { "hay_block", new []{ "hay_block_side" } },
@@ -46,7 +48,6 @@ namespace BuildPlate_Editor
             { "redstone_wire", new []{ "redstone_dust_dot" } },
             { "golden_rail", new []{ "powered_rail" } },
             { "lit_redstone_lamp", new []{ "redstone_lamp_on" } },
-            { "noteblock", new []{ "note_block" } },
             { "powered_repeater", new []{ "repeater_on" } },
             { "grass", new []{ "grass_carried" } },
             { "wheat", new []{ "wheat_stage_7" } },
@@ -510,6 +511,88 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { "stained_glass", (int data) =>
+                {
+                    int type = data & 0b_1111;
+                    switch (type) {
+                        case 0:
+                            return new [] { "glass_white" } ;
+                        case 1:
+                            return new [] { "glass_orange" } ;
+                        case 2:
+                            return new [] { "glass_magenta" } ;
+                        case 3:
+                            return new [] { "glass_light_blue" } ;
+                        case 4:
+                            return new [] { "glass_yellow" } ;
+                        case 5:
+                            return new [] { "glass_lime" } ;
+                        case 6:
+                            return new [] { "glass_pink" } ;
+                        case 7:
+                            return new [] { "glass_gray" } ;
+                        case 8:
+                            return new [] { "glass_silver" } ;
+                        case 9:
+                            return new [] { "glass_cyan" } ;
+                        case 10:
+                            return new [] { "glass_purple" } ;
+                        case 11:
+                            return new [] { "glass_blue" } ;
+                        case 12:
+                            return new [] { "glass_brown" } ;
+                        case 13:
+                            return new [] { "glass_green" } ;
+                        case 14:
+                            return new [] { "glass_red" };
+                        case 15:
+                            return new [] { "glass_black" };
+                        default:
+                            return new [] { "glass_white" };
+                    }
+                }
+            },
+            { "stained_glass_pane", (int data) =>
+                {
+                    int type = data & 0b_1111;
+                    switch (type) {
+                        case 0:
+                            return new [] { "glass_white" } ;
+                        case 1:
+                            return new [] { "glass_orange" } ;
+                        case 2:
+                            return new [] { "glass_magenta" } ;
+                        case 3:
+                            return new [] { "glass_light_blue" } ;
+                        case 4:
+                            return new [] { "glass_yellow" } ;
+                        case 5:
+                            return new [] { "glass_lime" } ;
+                        case 6:
+                            return new [] { "glass_pink" } ;
+                        case 7:
+                            return new [] { "glass_gray" } ;
+                        case 8:
+                            return new [] { "glass_silver" } ;
+                        case 9:
+                            return new [] { "glass_cyan" } ;
+                        case 10:
+                            return new [] { "glass_purple" } ;
+                        case 11:
+                            return new [] { "glass_blue" } ;
+                        case 12:
+                            return new [] { "glass_brown" } ;
+                        case 13:
+                            return new [] { "glass_green" } ;
+                        case 14:
+                            return new [] { "glass_red" };
+                        case 15:
+                            return new [] { "glass_black" };
+                        default:
+                            return new [] { "glass_white" };
+                    }
+                }
+            },
             // doors
             { "iron_door", (int data) =>
                 {
@@ -593,7 +676,6 @@ namespace BuildPlate_Editor
             { "fence", 7 },
             { "double_plant", 8 },
             { "tallgrass", 8 },
-            { "glass_pane", 9 },
             { "iron_bars", 9 },
             { "ladder", 10 },
             { "lantern", 11 },
@@ -667,7 +749,9 @@ namespace BuildPlate_Editor
             { 2, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // stair's "slab"
                 {
                     bool upper = Convert.ToBoolean((data & 0b_0100) >> 2);
-                    uint tex = (uint)texA[0];
+                    uint texSide = (uint)texA[0];
+                    uint texTop = (uint)texA[texA.Length > 1 ? 1 : 0];
+                    uint texBottom = (uint)texA[texA.Length > 2 ? 2 : (texA.Length > 1 ? 1 : 0)];
 
                     Vector3 offset = new Vector3(-0.5f, -0.5f, -0.5f);
 
@@ -684,16 +768,22 @@ namespace BuildPlate_Editor
 
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)vertices.Count;
-                        if (p == 2 || p == 3){
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], tex));
-                        } else {
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, uvs[0], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, uvs[1], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, uvs[2], tex));
-                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, uvs[3], tex));
+                        if (p == 2) { // top
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texTop));
+                        } else if (p == 3) { // bottom
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texBottom));
+                        }
+                        else {
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, uvs[0], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, uvs[1], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, uvs[2], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, uvs[3], texSide));
                         }
                         triangles.Add(firstVertIndex);
                         triangles.Add(firstVertIndex + 1);
@@ -706,7 +796,7 @@ namespace BuildPlate_Editor
                     blockRenderers[3](pos, cp, texA, data, ref vertices, ref triangles);
                 }
             },
-            { 3, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // stair's other part
+            { 3, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // stair's other part
                 {
                     int rot = data & 0b_0011;
                     bool upsideDown = Convert.ToBoolean((data & 0b_0100) >> 2);
@@ -754,7 +844,7 @@ namespace BuildPlate_Editor
                                 offset.X = 0.25f;
                             else if (rot == 3)
                                 offset.X = -0.25f;
-                            CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                            CubeTex(texA[0], pos + offset, size, ref vertices, ref triangles, VoxelData.Stair.smallUvs);
                             return;
                         } else if ((rot == 0 && neightborRot == 3) ||
                             (rot == 1 && neightborRot == 2) ||
@@ -769,12 +859,66 @@ namespace BuildPlate_Editor
                                 offset.X = -0.25f;
                             else if (rot == 3)
                                 offset.X = 0.25f;
-                            CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                            CubeTex(texA[0], pos + offset, size, ref vertices, ref triangles, VoxelData.Stair.smallUvs);
                             return;
                         }
                     }
 
-                    CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                    uint texSide = (uint)texA[0];
+                    uint texTop = (uint)texA[texA.Length > 1 ? 1 : 0];
+                    uint texBottom = (uint)texA[texA.Length > 2 ? 2 : (texA.Length > 1 ? 1 : 0)];
+
+                    offset = new Vector3(-0.5f, -0.5f, -0.5f);
+
+                    Vector3[] verts;
+                    Vector2[] uvs = VoxelData.Stair.zUvs;
+
+                    if (rot < 2) { // +x, -x, +z, -z
+                        verts = VoxelData.Stair.xVerts;
+                        uvs = VoxelData.Stair.xUvs;
+                    }
+                    else
+                        verts = VoxelData.Stair.zVerts;
+
+                    if (rot == 0)
+                        offset.X += 0.5f;
+                    else if (rot == 2)
+                        offset.Z += 0.5f;
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)vertices.Count;
+                        if (p < 2 && rot < 2) { // z
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Stair.smallUvs[0], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Stair.smallUvs[1], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Stair.smallUvs[2], texTop));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Stair.smallUvs[3], texTop));
+                        } else if (p > 3 && rot > 1) { // x
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Stair.smallUvs[0], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Stair.smallUvs[1], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Stair.smallUvs[2], texBottom));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Stair.smallUvs[3], texBottom));
+                        }
+                        else if (p == 2 || p == 3) { // top / bottom
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, uvs[0], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, uvs[1], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, uvs[2], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, uvs[3], texSide));
+                        }
+                        else {
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Stair.zUvs[0], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Stair.zUvs[1], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Stair.zUvs[2], texSide));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Stair.zUvs[3], texSide));
+                        }
+                        triangles.Add(firstVertIndex);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 3);
+                    }
+
+                    //CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
 
                     GetBlockIndex(iPos + (offsets[rot] * (-1)) + cp, out subChunkIndex, out blockIndex);
 
@@ -1197,6 +1341,7 @@ namespace BuildPlate_Editor
 
             chunks = new SubChunk[plate.sub_chunks.Count];
 
+            Console.WriteLine("Loading...");
             for (int subchunk = 0; subchunk < plate.sub_chunks.Count; subchunk++) {
                 List<string[]> __textures = new List<string[]>();
                 List<string> _textures = new List<string>();
@@ -1237,7 +1382,16 @@ namespace BuildPlate_Editor
                     }
                 }
 
-                int taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+                int taid;
+                try {
+                    taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+                } catch (Exception ex) {
+                    Console.WriteLine($"Exception was thrown while creating texture array: {ex}");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey(true);
+                    Environment.Exit(3);
+                    return; // doesn't go here, just that vs is happy
+                }
 
                 int[] renderers = new int[plate.sub_chunks[subchunk].blocks.Count];
                 for (int block = 0; block < plate.sub_chunks[subchunk].blocks.Count; block++) {
@@ -1248,6 +1402,8 @@ namespace BuildPlate_Editor
                         renderers[block] = 14;
                     else if (blockName.Contains("gate"))
                         renderers[block] = 12;
+                    else if (blockName.Contains("pane"))
+                        renderers[block] = 9;
                     else if (blockName.Contains("flower"))
                         renderers[block] = 8;
                     else if (blockName.Contains("trapdoor"))
@@ -1270,11 +1426,13 @@ namespace BuildPlate_Editor
                     Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, Texture: {palette[i].textures[0]}");
                 }
 
-                chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, plate.sub_chunks[subchunk].blocks.ForArray(i => (uint)i), renderers, palette, taid);
+                chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, 
+                    plate.sub_chunks[subchunk].blocks.ForArray(i => (uint)i), renderers, palette, taid);
             }
-
+            Console.WriteLine("Initializing chunks");
             for (int i = 0; i < chunks.Length; i++)
                 chunks[i].Init();
+            Console.WriteLine("DONE");
         }
 
         public static void Render(Shader s)

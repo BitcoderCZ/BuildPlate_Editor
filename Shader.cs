@@ -20,7 +20,7 @@ namespace BuildPlate_Editor
 
         public void Compile(string shaderName)
         {
-            string path = Environment.CurrentDirectory + "/Data/Shaders/" + shaderName;
+            string path = Program.baseDir + "Data/Shaders/" + shaderName;
             vertexShaderSource = File.ReadAllText(path + ".vert");
             fragmentShaderSource = File.ReadAllText(path + ".frag");
 

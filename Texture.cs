@@ -24,7 +24,7 @@ namespace BuildPlate_Editor
         {
             int taid;
             GL.ActiveTexture(TextureUnit.Texture1);
-            GL.GenTextures(1, out taid);
+            taid = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2DArray, taid);
 
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2DArray);
@@ -42,13 +42,14 @@ namespace BuildPlate_Editor
             Console.WriteLine("TEXTURE:BLOCKARRAY:GENERATE:START");
             for (int i = 0; i < texturesToLoad.Length; i++) {
                 string texPath = texturesToLoad[i];
+
                 if (!File.Exists(texPath)) {
                     Console.ForegroundColor = ConsoleColor.Red;
                     string name = Path.GetFileNameWithoutExtension(texPath);
                     if (name != "air" && !name.Contains("constraint"))
                         Console.WriteLine($"Block texture {Path.GetFileName(texPath)}, wasn't found");
                     Console.ResetColor();
-                    texPath = Environment.CurrentDirectory + "\\Data\\Textures\\Black.png";
+                    texPath = Program.baseDir + "Data\\Textures\\Black.png";
                 }
 
                 bm = new Bitmap(texPath);

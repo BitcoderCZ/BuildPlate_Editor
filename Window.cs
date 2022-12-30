@@ -10,6 +10,7 @@ using OpenTK.Input;
 using System.Runtime.InteropServices;
 
 using BuildPlate_Editor.Maths;
+using System.Diagnostics;
 
 namespace BuildPlate_Editor
 {
@@ -30,12 +31,22 @@ namespace BuildPlate_Editor
             Title = "BuildPlate_Editor";
         }
 
+        public DebugProc debMessageCallback;
+
         protected override void OnLoad(EventArgs e)
         {
+            MakeCurrent();
             GL.Enable(EnableCap.DebugOutput);
-            GL.DebugMessageCallback(MessageCallback, IntPtr.Zero);
+            debMessageCallback = new DebugProc(MessageCallback); // Fixed error: A callback was made on a garbage collected delegate
+            GL.DebugMessageCallback(debMessageCallback, IntPtr.Zero);
 
-            World.Init();
+            try {
+                World.Init();
+            } catch (Exception ex) {
+                Console.WriteLine($"Failed to initialize World: {ex}");
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey(true);
+            }
 
             shader = new Shader();
             shader.Compile("shader");
@@ -54,6 +65,8 @@ namespace BuildPlate_Editor
             Camera.UpdateView(Width, Height);
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
+
+            Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);//Icon.FromHandle(.MainWindowHandle);
 
             LockMouse();
         }

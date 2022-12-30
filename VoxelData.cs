@@ -137,5 +137,56 @@ namespace BuildPlate_Editor
 				new Vector2(0.5625f, 0.125f)
 			};
 		}
+		public static class Stair
+        {
+			public static readonly Vector3[] zVerts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f),
+				new Vector3(1.0f, 0.0f, 0.0f),
+				new Vector3(1.0f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.0f, 0.5f),
+				new Vector3(1.0f, 0.0f, 0.5f),
+				new Vector3(1.0f, 0.5f, 0.5f),
+				new Vector3(0.0f, 0.5f, 0.5f)
+			};
+			public static readonly Vector3[] xVerts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f),
+				new Vector3(0.5f, 0.0f, 0.0f),
+				new Vector3(0.5f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.0f, 1.0f),
+				new Vector3(0.5f, 0.0f, 1.0f),
+				new Vector3(0.5f, 0.5f, 1.0f),
+				new Vector3(0.0f, 0.5f, 1.0f)
+			}; 
+			public static readonly Vector3[] smallVerts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f),
+				new Vector3(0.5f, 0.0f, 0.0f),
+				new Vector3(0.5f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.5f, 0.0f),
+				new Vector3(0.0f, 0.0f, 0.5f),
+				new Vector3(0.5f, 0.0f, 0.5f),
+				new Vector3(0.5f, 0.5f, 0.5f),
+				new Vector3(0.0f, 0.5f, 0.5f)
+			};
+			public static readonly Vector2[] zUvs = new Vector2[4] {
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 0.5f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(1.0f, 0.5f)
+			};
+			public static readonly Vector2[] xUvs = new Vector2[4] {
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(0.5f, 0.0f),
+				new Vector2(0.5f, 1.0f)
+			};
+			public static readonly Vector2[] smallUvs = new Vector2[4] {
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 0.5f),
+				new Vector2(0.5f, 0.0f),
+				new Vector2(0.5f, 0.5f)
+			};
+		}
 	}
 }

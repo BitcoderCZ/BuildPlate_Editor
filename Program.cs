@@ -17,7 +17,6 @@ namespace BuildPlate_Editor
         public static Window Window;
         public static string baseDir;
 
-        // todo: check json is buildplate
         static void Main(string[] args)
         {
             // Get base path (.exe location)
@@ -25,8 +24,11 @@ namespace BuildPlate_Editor
 
             if (args != null && args.Length > 0 && args[0] == "setJsonDefault") {
                 Util.SetAssociationWithExtension(".json", "Json", myExecutable, "BuildPlate");
+                Util.SetAssociationWithExtension(".plate", "Plate", myExecutable, "BuildPlate");
+                Util.SetAssociationWithExtension(".plate64", "Plate64", myExecutable, "BuildPlate");
                 Console.WriteLine("Set .json as default, To Apply: Select .json file, click \"Open with\", \"Choose another app\", " +
                     "Select BuildPlate_Editor, Check \"Always use this app...\"");
+                Console.WriteLine("You can also do this for .plate and .plate64");
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey(true);
                 return;
@@ -91,20 +93,41 @@ namespace BuildPlate_Editor
             World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\00d1fa99-7acf-449d-bb4f-8d11127bd6e3.json";
 #else
             Console.Write("Build plate to edit (.json): ");
-            if (args != null && args.Length > 0 && File.Exists(args[0])) {
-                World.targetFilePath = args[0];
-                Console.WriteLine(args[0]);
-            }
-            else {
-                string buildPlate = Console.ReadLine();
-                if (!File.Exists(buildPlate)) {
-                    Console.WriteLine($"build plate \"{buildPlate}\" doesn't exist");
-                    Console.ReadKey(true);
-                    return;
+            // json - api, plate - data only, plate64 - base64 encoded data
+            if (args != null && args.Length > 0 && File.Exists(string.Join(" ", args)) && string.Join(" ", args).Split('.').Length > 1) {
+                string truePath = new FileInfo(string.Join(" ", args)).FullName;
+                Console.WriteLine(truePath);
+                string extension = truePath.Split('.').Last();
+                if (extension == "json" || extension == "plate" || extension == "plate64") {
+                    World.targetFilePath = truePath;
+                    goto check;
                 }
-                World.targetFilePath = buildPlate;
             }
+
+            string buildPlate = Console.ReadLine();
+            if (!File.Exists(buildPlate)) {
+                Console.WriteLine($"build plate \"{buildPlate}\" doesn't exist");
+                Console.ReadKey(true);
+                return;
+            } else if (Path.GetExtension(buildPlate) == ".json" || Path.GetExtension(buildPlate) == ".plate" 
+                || Path.GetExtension(buildPlate) == ".plate64") {
+                Console.WriteLine($"\"{Path.GetExtension(buildPlate)}\" isn't valid buildplate extension, valid: .json, .plate, .plate64");
+                Console.ReadKey(true);
+                return;
+            }
+            World.targetFilePath = buildPlate;
 #endif
+            check:
+            // check json is buildplate
+            try {
+                BuildPlate.Load(World.targetFilePath);
+            } catch {
+                Console.WriteLine($"Couldn't parse \"{World.targetFilePath}\", Make sure it's valid build plate file.");
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey(true);
+                return;
+            }
+
             Window = new Window();
             string version;
             try { version = OpenGLHelper.GetVersion(); } catch { version = "Failed to get version"; }

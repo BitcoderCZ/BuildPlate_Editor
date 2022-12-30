@@ -145,14 +145,6 @@ namespace BuildPlate_Editor
         // needs admin
         public static void SetAssociationWithExtension(string Extension, string key, string OpenWith, string FileDescription)
         {
-            /*Key: HKLM\SOFTWARE\Classes\.foo
-Value: <default> = “Foo.Document”
-
-Key: HKLM\SOFTWARE\Classes\Foo.Document
-Value: <default> = “Foo Document”
-
-Key: HKLM\SOFTWARE\Classes\Foo.Document\shell\open\command
-Value: <default> = “[blah.exe]” “%1″*/
             RegistryKey key1 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{Extension}");
             key1.SetValue("", $"{Extension.Replace(".", "")}.Document");
             key1.Flush();
@@ -160,10 +152,10 @@ Value: <default> = “[blah.exe]” “%1″*/
             key2.SetValue("", FileDescription);
             key2.Flush();
             RegistryKey key3 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{key}.Document\Shell\Open\Command");
-            key3.SetValue("", $"{OpenWith} %1");
+            key3.SetValue("", $"\"{OpenWith}\" %1");
             key3.Flush();
             RegistryKey key4 = Registry.LocalMachine.CreateSubKey($@"SOFTWARE\Classes\{key}.Document\Shell\Edit\Command");
-            key4.SetValue("", $"{OpenWith} %1");
+            key4.SetValue("", $"\"{OpenWith}\" %1");
             key4.Flush();
         }
     }

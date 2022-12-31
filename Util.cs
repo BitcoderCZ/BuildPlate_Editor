@@ -46,7 +46,7 @@ namespace BuildPlate_Editor
 
         public static int Normalized(this int i)
         {
-            int value = System.Math.Min(System.Math.Max(i, -1), 1);
+            int value = Math.Min(Math.Max(i, -1), 1);
             if (value == 0)
                 value = 1;
             return value;
@@ -107,6 +107,24 @@ namespace BuildPlate_Editor
                 verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] * size - size / 2f, uvs[1], tex));
                 verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] * size - size / 2f, uvs[2], tex));
                 verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] * size - size / 2f, uvs[3], tex));
+                tris.Add(firstVertIndex);
+                tris.Add(firstVertIndex + 1);
+                tris.Add(firstVertIndex + 2);
+                tris.Add(firstVertIndex + 2);
+                tris.Add(firstVertIndex + 1);
+                tris.Add(firstVertIndex + 3);
+            }
+        }
+
+        public static void SkyboxTex(int _tex, Vector3 size, ref List<Vertex> verts, ref List<uint> tris)
+        {
+            uint tex = (uint)_tex;
+            for (int p = 0; p < 6; p++) {
+                uint firstVertIndex = (uint)verts.Count;
+                verts.Add(new Vertex(VoxelData.voxelVerts[VoxelData.SkyBox.tris[p, 3]] * size - size / 2f, VoxelData.SkyBox.voxelUvs[p][0], tex));
+                verts.Add(new Vertex(VoxelData.voxelVerts[VoxelData.SkyBox.tris[p, 2]] * size - size / 2f, VoxelData.SkyBox.voxelUvs[p][1], tex));
+                verts.Add(new Vertex(VoxelData.voxelVerts[VoxelData.SkyBox.tris[p, 1]] * size - size / 2f, VoxelData.SkyBox.voxelUvs[p][2], tex));
+                verts.Add(new Vertex(VoxelData.voxelVerts[VoxelData.SkyBox.tris[p, 0]] * size - size / 2f, VoxelData.SkyBox.voxelUvs[p][3], tex));
                 tris.Add(firstVertIndex);
                 tris.Add(firstVertIndex + 1);
                 tris.Add(firstVertIndex + 2);

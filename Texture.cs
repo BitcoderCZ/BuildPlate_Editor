@@ -81,6 +81,7 @@ namespace BuildPlate_Editor
             Width = db.Width;
             Height = db.Height;
 
+            GL.ActiveTexture(TextureUnit.Texture0);
             GL.GenTextures(1, out id);
             GL.BindTexture(TextureTarget.Texture2D, id);
 

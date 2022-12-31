@@ -37,7 +37,9 @@ namespace BuildPlate_Editor
             baseDir = Path.GetDirectoryName(myExecutable) + "\\";
             Console.WriteLine($"Base directory: {baseDir}");
 
+#if DEBUG == false
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+#endif
 
             if (File.Exists(baseDir + "askedForDefault") || args != null && args.Length > 0)
                 goto skipAks;
@@ -90,7 +92,7 @@ namespace BuildPlate_Editor
             World.textureBasePath = texturesPath;
 #if DEBUG
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\7cd6d53b-1715-4b22-9a99-d6d43edd61df.json";
-            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\00d1fa99-7acf-449d-bb4f-8d11127bd6e3.json";
+            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\2cb8bda2-c49b-4ead-887f-593d37bc2784.json";
 #else
             Console.Write("Build plate to edit (.json): ");
             // json - api, plate - data only, plate64 - base64 encoded data

@@ -11,12 +11,14 @@ using System.Runtime.InteropServices;
 
 using BuildPlate_Editor.Maths;
 using System.Diagnostics;
+using System.IO;
 
 namespace BuildPlate_Editor
 {
     public class Window : GameWindow
     {
         Shader shader;
+        Shader shader2;
         KeyboardState keyboardState;
 
         // Mouse
@@ -40,6 +42,9 @@ namespace BuildPlate_Editor
             debMessageCallback = new DebugProc(MessageCallback); // Fixed error: A callback was made on a garbage collected delegate
             GL.DebugMessageCallback(debMessageCallback, IntPtr.Zero);
 
+#if DEBUG
+            World.Init();
+#else
             try {
                 World.Init();
             } catch (Exception ex) {
@@ -47,10 +52,15 @@ namespace BuildPlate_Editor
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey(true);
             }
+#endif
 
             shader = new Shader();
             shader.Compile("shader");
-
+            shader2 = new Shader();
+            shader2.Compile("shader2");
+            
+            SkyBox.Init(Program.baseDir + "/Data/Textures/skybox.png", Camera.position, 500);
+            
             base.WindowBorder = WindowBorder.Fixed;
             base.WindowState = WindowState.Normal;
             GL.Viewport(0, 0, Width, Height);
@@ -135,15 +145,22 @@ namespace BuildPlate_Editor
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            GL.ClearColor(Color.Cyan);
+            GL.ClearColor(Color.FromArgb(92, 157, 255));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             shader.Bind();
             Camera.UpdateView(Width, Height);
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
-
             World.Render(shader);
+
+            shader2.Bind();
+            shader2.UploadMat4("uProjection", ref Camera.projMatrix);
+            shader2.UploadMat4("uView", ref Camera.viewMatrix);
+            GL.Disable(EnableCap.CullFace);
+            SkyBox.pos = Camera.position;
+            SkyBox.Render(shader2);
+            GL.Enable(EnableCap.CullFace);
 
             SwapBuffers();
         }

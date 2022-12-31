@@ -30,35 +30,50 @@ namespace BuildPlate_Editor
             { "stone_slab", new []{ "stone" } },
             { "wooden_slab", new []{ "planks" } },
             // stairs
+            { "stone_stairs", new []{ "stone" } },
             { "oak_stairs", new []{ "planks_oak" } },
             { "jungle_stairs", new []{ "planks_jungle" } },
             { "spruce_stairs", new []{ "planks_spruce" } },
+            { "dark_oak_stairs", new []{ "planks_big_oak" } },
             { "stone_brick_stairs", new []{ "stonebrick" } },
             { "polished_andesite_stairs", new []{ "stone_andesite_smooth" } },
+            { "polished_diorite_stairs", new []{ "stone_diorite_smooth" } },
+            { "sandstone_stairs", new []{ "sandstone_normal" } },
+            { "smooth_sandstone_stairs", new []{ "sandstone_top" } },
+            { "polished_granite_stairs", new []{ "stone_granite_smooth" } },
             // terracotta
             { "yellow_glazed_terracotta", new []{ "glazed_terracotta_yellow" } },
             // other
             { "carpet", new []{ "wool" } },
+            { "red_sandstone", new []{ "red_sandstone_normal" } },
             { "packed_ice", new []{ "ice_packed" } },
+            { "piston", new []{ "piston_top_normal" } },
             { "rainbow_wool", new []{ "rainbow_wool_a" } },
             { "rainbow_carpet", new []{ "rainbow_wool_a" } },
             { "hay_block", new []{ "hay_block_side" } },
             { "melon_block", new []{ "melon_side" } },
             { "pumpkin", new []{ "pumpkin_side" } },
-            { "redstone_wire", new []{ "redstone_dust_dot" } },
+            { "redstone_wire", new []{ "redstone_dust_line" } },
+            { "quartz_block", new []{ "quartz_block_side" } }, // todo
+            { "redstone_dust_dot", new []{ "redstone_dust_cross" } },
             { "golden_rail", new []{ "powered_rail" } },
+            { "redstone_lamp", new []{ "redstone_lamp_off" } },
             { "lit_redstone_lamp", new []{ "redstone_lamp_on" } },
-            { "powered_repeater", new []{ "repeater_on" } },
+            { "powered_repeater", new []{ "repeater_on", /*"redstone_torch_on"*/ } },
+            { "unpowered_repeater", new []{ "repeater_off", /*"redstone_torch_off"*/ } },
+            { "dark_oak_fence_gate", new []{ "planks_big_oak" } },
             { "grass", new []{ "grass_carried" } },
             { "wheat", new []{ "wheat_stage_7" } },
             { "carrots", new []{ "carrots_stage_3" } },
             { "beetroot", new []{ "beetroots_stage_3" } },
+            { "potatoes", new []{ "potatoes_stage_3" } },
             { "farmland", new []{ "farmland_dry" } },
             { "torch", new []{ "torch_on" } },
             { "sandstone", new []{ "sandstone_normal" } },
             { "red_mushroom", new []{ "mushroom_red" } },
             { "tripWire", new []{ "trip_wire" } },
             { "pumpkin_stem", new []{ "pumpkin_stem_disconnected" } },
+            { "melon_stem", new []{ "melon_stem_disconnected" } },
             { "tall_grass_bottom", new []{ "double_plant_grass_carried" } }, // bottom is .tga :(
             { "tallgrass", new []{ "double_plant_grass_carried" } },
             { "glass_pane", new []{ "glass" } },
@@ -71,6 +86,11 @@ namespace BuildPlate_Editor
             { "bone_block", new []{ "bone_block_top" } },
             { "redstone_torch", new []{ "redstone_torch_on" } },
             { "cauldron", new []{ "cauldron_side" } },
+            { "unlit_redstone_torch", new []{ "redstone_torch_off" } },
+            { "cocoa", new []{ "cocoa_stage_2" } },
+            { "smooth_stone", new []{ "stone_slab_top" } }, // maybe not idk
+            // terracotta
+            { "white_glazed_terracotta", new []{ "glazed_terracotta_white" } },
             // flowers
             { "yellow_flower", new []{ "flower_dandelion" } },
             { "red_flower", new []{ "flower_rose" } },
@@ -80,8 +100,10 @@ namespace BuildPlate_Editor
             // gate
             { "birch_fence_gate", new []{ "planks_birch" } },
             { "jungle_fence_gate", new []{ "planks_jungle" } },
+            { "fence_gate", new []{ "planks_oak" } },
             // preasure plate
             { "stone_pressure_plate", new []{ "stone" } },
+            { "wooden_pressure_plate", new []{ "planks_oak" } },
             // button
             { "jungle_button", new []{ "planks_jungle" } },
         });
@@ -183,31 +205,71 @@ namespace BuildPlate_Editor
             { "leaves", (int data) =>
                 {
                     int leafType = data & 0b_0011;
+                    string name;
                     switch (leafType) {
                         case 0:
-                            return new [] { "leaves_oak_opaque" } ;
+                            name = "leaves_oak_opaque";
+                            break;
                         case 1:
-                            return new [] { "leaves_spruce_opaque" } ;
+                            name =  "leaves_spruce_opaque";
+                            break;
                         case 2:
-                            return new [] { "leaves_birch_opaque" } ;
+                            name = "leaves_birch_opaque";
+                            break;
                         case 3:
-                            return new [] { "leaves_jungle_opaque" } ;
+                            name = "leaves_jungle_opaque";
+                            break;
                         default:
-                            return new [] { "leaves_oak_opaque" } ;
+                            name =  "leaves_oak_opaque";
+                            break;
                     }
+                    string newName = name.Replace("_opaque", "");
+                    // make green
+                     SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png");
+                    byte darkest = 255;
+                    for (int i = 0; i < db.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
+                        if (c.G < darkest)
+                            darkest = c.G;
+                    }
+                    for (int i = 0; i < db.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
+                        db.Data[i] = System.Drawing.Color.FromArgb(c.G == darkest ? 0 : 255, 0, c.G, 0).ToArgb();
+                    }
+                    db.Bitmap.Save(textureBasePath + newName + ".png");
+                    return new string[] { newName };
                 }
             },
             { "leaves2", (int data) =>
                 {
                     int leafType = data & 0b_0001;
+                    string name;
                     switch (leafType) {
                         case 0:
-                            return new [] { "leaves_acacia_opaque" } ;
+                            name = "leaves_acacia_opaque";
+                            break;
                         case 1:
-                            return new [] { "leaves_big_oak_opaque" } ; // dark oak
+                            name = "leaves_big_oak_opaque"; // dark oak
+                            break;
                         default:
-                            return new [] { "leaves_acacia_opaque" } ;
+                            name = "leaves_acacia_opaque";
+                            break;
                     }
+                    string newName = name.Replace("_opaque", "");
+                    // make green
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png");
+                    byte darkest = 255;
+                    for (int i = 0; i < db.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
+                        if (c.G < darkest)
+                            darkest = c.G;
+                    }
+                    for (int i = 0; i < db.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
+                        db.Data[i] = System.Drawing.Color.FromArgb(c.G == darkest ? 0 : 255, 0, c.G, 0).ToArgb();
+                    }
+                    db.Bitmap.Save(textureBasePath + newName + ".png");
+                    return new string[] { newName };
                 }
             },
             { "concrete", (int data) =>
@@ -607,6 +669,32 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { "jungle_door", (int data) =>
+                {
+                    int upper_block_bit = (data & 0b_1000) >> 3;
+                    switch (upper_block_bit) {
+                        case 0:
+                            return new [] { "door_jungle_lower" };
+                        case 1:
+                            return new [] { "door_jungle_upper" };
+                        default:
+                            return new [] { "door_jungle_lower" };
+                    }
+                }
+            },
+            { "wooden_door", (int data) =>
+                {
+                    int upper_block_bit = (data & 0b_1000) >> 3;
+                    switch (upper_block_bit) {
+                        case 0:
+                            return new [] { "door_wood_lower" };
+                        case 1:
+                            return new [] { "door_wood_upper" };
+                        default:
+                            return new [] { "door_wood_lower" };
+                    }
+                } // oak
+            },
 
 
             { "", (int data) =>
@@ -668,8 +756,10 @@ namespace BuildPlate_Editor
             { "wheat", 5 },
             { "reeds", 5 },
             { "carrots", 5 },
+            { "potatoes", 5 },
             { "beetroot", 5 },
             { "pumpkin_stem", 8 },
+            { "melon_stem", 8 },
             { "carpet", 6 },
             { "rainbow_carpet", 6 },
             { "waterlily", 6 },
@@ -681,8 +771,10 @@ namespace BuildPlate_Editor
             { "lantern", 11 },
             { "torch", 13 },
             { "redstone_torch", 13 },
+            { "unlit_redstone_torch", 13 },
             { "snow_layer", 15 },
-            { "pumpkin", 16 },
+            { "powered_repeater", 16 },
+            { "unpowered_repeater", 16 },
         };
 
 
@@ -1094,10 +1186,10 @@ namespace BuildPlate_Editor
 
                     switch (facing) { // might be wrong, thx wiki for good documentation
                         case 0:
-                            offset = new Vector3(0f, 0f, -0.3f);
+                            offset = new Vector3(0f, 0f, 0.3f);
                             break;
                         case 1:
-                            offset = new Vector3(0f, 0f, 0.3f);
+                            offset = new Vector3(0f, 0f, -0.3f);
                             break;
                         case 2:
                             offset = new Vector3(0.3f, 0f, 0f);
@@ -1195,11 +1287,77 @@ namespace BuildPlate_Editor
                     CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
                 }
             },
-            { 16, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // diff tex: sides, top + bottom
+            { 16, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> verts, ref List<uint> tris) => // repeater
                 {
-                    Vector3 offset = new Vector3(0f, 0f, 0f);
-                    Vector3 size = new Vector3(1f, 1f, 1f);
-                    CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                    int dir = data & 0b_0011;
+                    Matrix3 mat = Matrix3.Identity;
+                    Vector3 offset = Vector3.One / -2f;
+
+                    if (dir == 0) {
+                        mat =  Matrix3.Identity; // 0 degrees
+                    }
+                    else if (dir == 1) {
+                        mat = Matrix3.CreateRotationY(1.5708f); // 90 degrees
+                        offset.Z += 1f;
+                    } else if (dir == 2) {
+                        mat = Matrix3.CreateRotationY(3.14159f); // 180 degrees
+                        offset.Z += 1f;
+                    } else {
+                        mat = Matrix3.CreateRotationY(4.71239f); // 270 degrees
+                        offset.X += 1f;
+                    }
+
+                    uint tex = (uint)texA[0];
+                    uint torchTex = tex;//(uint)texA[1];
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)verts.Count;
+                        if (p == 2 || p == 3) { // top/bottom
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] * mat + offset, VoxelData.voxelUvs[0], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] * mat + offset, VoxelData.voxelUvs[1], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] * mat + offset, VoxelData.voxelUvs[2], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] * mat + offset, VoxelData.voxelUvs[3], tex));
+                        } else {
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] * mat + offset, VoxelData.Repeater.sideUvs[0], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] * mat + offset, VoxelData.Repeater.sideUvs[1], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] * mat + offset, VoxelData.Repeater.sideUvs[2], tex));
+                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] * mat + offset, VoxelData.Repeater.sideUvs[3], tex));
+                        }
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
+
+                    return;
+                    offset = -Vector3.One / 2f;
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)verts.Count;
+                        if (p == 2) { // top
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsTop[0], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsTop[1], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsTop[2], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsTop[3], torchTex));
+                        } else if (p == 3) { // bottom
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsBottom[0], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsBottom[1], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsBottom[2], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsBottom[3], torchTex));
+                        }
+                        else {
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsSide[0], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsSide[1], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsSide[2], torchTex));
+                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsSide[3], torchTex));
+                        }
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
                 }
             },
         };

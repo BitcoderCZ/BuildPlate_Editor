@@ -188,5 +188,77 @@ namespace BuildPlate_Editor
 				new Vector2(0.5f, 0.5f)
 			};
 		}
+		public static class Repeater
+        {
+			public static readonly Vector3[] verts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f),
+				new Vector3(1.0f, 0.0f, 0.0f),
+				new Vector3(1.0f, 0.125f, 0.0f),
+				new Vector3(0.0f, 0.125f, 0.0f),
+				new Vector3(0.0f, 0.0f, 1.0f),
+				new Vector3(1.0f, 0.0f, 1.0f),
+				new Vector3(1.0f, 0.125f, 1.0f),
+				new Vector3(0.0f, 0.125f, 1.0f)
+			};
+			public static readonly Vector2[] sideUvs = new Vector2[4] {
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 0.125f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(1.0f, 0.125f)
+			};
+		}
+		public static class SkyBox
+        {
+			const float first1 = 1f / 3f;
+			const float first2 = 2f / 3f;
+
+			public static readonly Vector2[][] voxelUvs = new Vector2[][] {
+				new Vector2[] { // Back Face
+					new Vector2(0.5f, first1),
+					new Vector2(0.5f, first2),
+					new Vector2(0.25f, first1),
+					new Vector2(0.25f, first2)
+				},
+				new Vector2[] { // Front Face
+					new Vector2(0.75f, first1),
+					new Vector2(0.75f, first2),
+					new Vector2(1.0f, first1),
+					new Vector2(1.0f, first2)
+				},
+				new Vector2[] { // Top Face
+					new Vector2(0.5f, 0f),
+					new Vector2(0.5f, first1),
+					new Vector2(0.25f, 0f),
+					new Vector2(0.25f, first1)
+				},
+				new Vector2[] { // Bottom Face
+					new Vector2(0.5f, first2),
+					new Vector2(0.5f, 1f),
+					new Vector2(0.25f, first2),
+					new Vector2(0.25f, 1f)
+				},
+				new Vector2[] { // Left Face
+					new Vector2(0.25f, first1),
+					new Vector2(0.25f, first2),
+					new Vector2(0.0f, first1),
+					new Vector2(0.0f, first2)
+				},
+				new Vector2[] { // Right Face
+					new Vector2(0.75f, first1),
+					new Vector2(0.75f, first2),
+					new Vector2(0.5f, first1),
+					new Vector2(0.5f, first2)
+				},
+			};
+			public static readonly int[,] tris = new int[6, 4] {
+				// 0 1 2 2 1 3
+				{0, 3, 1, 2}, // Back Face
+				{5, 6, 4, 7}, // Front Face
+				{3, 7, 2, 6}, // Top Face
+				{1, 5, 0, 4}, // Bottom Face
+				{4, 7, 0, 3}, // Left Face
+				{1, 2, 5, 6} // Right Face
+			};
+		}
 	}
 }

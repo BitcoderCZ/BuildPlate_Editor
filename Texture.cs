@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using BuildPlate_Editor.Maths;
+using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,99 @@ namespace BuildPlate_Editor
         public int id;
         public int Width;
         public int Height;
+
+        public static (Vector2i offset, Vector2i size)[] CreateOffsets(int width, int height) // +X, -X, +Y, -Y, +Z, -Z
+        {
+            int w = (int)((float)width / 4f);
+            int h = (int)((float)height / 3f);
+
+            if (w > h)
+                w = h;
+            else if (h > w)
+                h = w;
+
+            return new (Vector2i offset, Vector2i size)[]
+            {
+                (new Vector2i(w * 2, h), new Vector2i(w, h)),
+                (new Vector2i(0, h), new Vector2i(w, h)),
+                (new Vector2i(w, 0), new Vector2i(w, h)),
+                (new Vector2i(w, h * 2), new Vector2i(w, h)),
+                (new Vector2i(w, h), new Vector2i(w, h)),
+                (new Vector2i(w * 3, h), new Vector2i(w, h)),
+            };
+        }
+
+        public static int GenerateCubeMap(DirectBitmap db, (Vector2i offset, Vector2i size)[] offsets)
+        {
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.GenTextures(1, out int id);
+            GL.BindTexture(TextureTarget.TextureCubeMap, id);
+
+            int peaceWidth = (int)((float)db.Width / 4f);
+            int peaceHeight = (int)((float)db.Height / 3f);
+
+            // Texture must be 1:1
+            if (peaceWidth > peaceHeight)
+                peaceWidth = peaceHeight;
+            else if (peaceHeight > peaceWidth)
+                peaceHeight = peaceWidth;
+
+            for (int i = 0; i < 6; i++) {
+
+                DirectBitmap peace = new DirectBitmap(peaceWidth, peaceHeight);
+                for (int j = 0; j < peaceHeight; j++)
+                    peace.Write(j * peaceWidth, db.Data, (offsets[i].offset.Y + j) * db.Width + offsets[i].offset.X, peaceWidth);
+
+
+                BitmapData data = peace.Bitmap.LockBits(new Rectangle(0, 0, peaceWidth, peaceHeight), ImageLockMode.ReadOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX + i, 0, PixelInternalFormat.Rgb, peaceWidth, peaceHeight, 0,
+                    PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+                peace.Bitmap.UnlockBits(data);
+                peace.Dispose();
+            }
+
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+
+            return id;
+        }
+        public static int GenerateCubeMap(string[] paths)
+        {
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.GenTextures(1, out int id);
+            GL.BindTexture(TextureTarget.TextureCubeMap, id);
+
+            if (paths.Length != 6)
+                throw new Exception($"Skybox must be 6 images not {paths.Length}");
+
+            for (int i = 0; i < paths.Length; i++) {
+
+                DirectBitmap db = DirectBitmap.Load(paths[i]);
+
+                BitmapData data = db.Bitmap.LockBits(new Rectangle(0, 0, db.Width, db.Height), ImageLockMode.ReadOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX + i, 0, PixelInternalFormat.Rgb, db.Width, db.Height, 0,
+                    PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+                db.Bitmap.UnlockBits(data);
+                db.Dispose();
+            }
+
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+
+            return id;
+        }
 
         public static int CreateTextureArray(string[] texturesToLoad, TexFlip flip)
         {

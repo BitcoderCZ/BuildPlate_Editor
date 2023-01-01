@@ -102,6 +102,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Data\Shaders\skybox.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Shaders\skybox.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Data\Shaders\shader2.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -128,7 +134,25 @@
     <Content Include="Data\Textures\Black.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Textures\skybox.png">
+    <Content Include="Data\Textures\Skybox_0.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset+X.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset+Y.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset+Z.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset-X.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset-Y.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset-Z.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

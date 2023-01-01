@@ -260,5 +260,60 @@ namespace BuildPlate_Editor
 				{1, 2, 5, 6} // Right Face
 			};
 		}
+		public static class SkyBox2
+        {
+			public static Vector3[] verts = new Vector3[] {
+				// positions          
+				new Vector3(-1.0f,  1.0f, -1.0f),
+				new Vector3(-1.0f, -1.0f, -1.0f),
+				new Vector3(1.0f, -1.0f, -1.0f),
+				new Vector3(1.0f, -1.0f, -1.0f),
+				new Vector3(1.0f,  1.0f, -1.0f),
+				new Vector3(-1.0f,  1.0f, -1.0f),
+
+				new Vector3(-1.0f, -1.0f,  1.0f),
+				new Vector3(-1.0f, -1.0f, -1.0f),
+				new Vector3(-1.0f,  1.0f, -1.0f),
+				new Vector3(-1.0f,  1.0f, -1.0f),
+				new Vector3(-1.0f,  1.0f,  1.0f),
+				new Vector3(-1.0f, -1.0f,  1.0f),
+
+				new Vector3(1.0f, -1.0f, -1.0f),
+				new Vector3(1.0f, -1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f, -1.0f),
+				new Vector3(1.0f, -1.0f, -1.0f),
+
+				new Vector3(-1.0f, -1.0f,  1.0f),
+				new Vector3(-1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f, -1.0f,  1.0f),
+				new Vector3(-1.0f, -1.0f,  1.0f),
+
+				new Vector3(-1.0f,  1.0f, -1.0f),
+				new Vector3(1.0f,  1.0f, -1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(1.0f,  1.0f,  1.0f),
+				new Vector3(-1.0f,  1.0f,  1.0f),
+				new Vector3(-1.0f,  1.0f, -1.0f),
+
+				new Vector3(-1.0f, -1.0f, -1.0f),
+				new Vector3(-1.0f, -1.0f,  1.0f),
+				new Vector3(1.0f, -1.0f, -1.0f),
+				new Vector3(1.0f, -1.0f, -1.0f),
+				new Vector3(-1.0f, -1.0f,  1.0f),
+				new Vector3(1.0f, -1.0f,  1.0f)
+			};
+			public static uint[] tris;
+
+			static SkyBox2()
+            {
+				tris = new uint[verts.Length];
+                for (uint i = 0; i < tris.Length; i++)
+					tris[i] = i;
+            }
+		}
 	}
 }

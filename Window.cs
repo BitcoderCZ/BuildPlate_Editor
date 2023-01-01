@@ -19,6 +19,7 @@ namespace BuildPlate_Editor
     {
         Shader shader;
         Shader shader2;
+        Shader skyboxShader;
         KeyboardState keyboardState;
 
         // Mouse
@@ -58,8 +59,10 @@ namespace BuildPlate_Editor
             shader.Compile("shader");
             shader2 = new Shader();
             shader2.Compile("shader2");
-            
-            SkyBox.Init(Program.baseDir + "/Data/Textures/skybox.png", Camera.position, 500);
+            skyboxShader = new Shader();
+            skyboxShader.Compile("skybox");
+
+            SkyBox.Init("Cold_Sunset", Camera.position, 100f);
             
             base.WindowBorder = WindowBorder.Fixed;
             base.WindowState = WindowState.Normal;
@@ -76,7 +79,7 @@ namespace BuildPlate_Editor
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
 
-            Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);//Icon.FromHandle(.MainWindowHandle);
+            Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
 
             LockMouse();
         }
@@ -154,12 +157,12 @@ namespace BuildPlate_Editor
             shader.UploadMat4("uView", ref Camera.viewMatrix);
             World.Render(shader);
 
-            shader2.Bind();
-            shader2.UploadMat4("uProjection", ref Camera.projMatrix);
-            shader2.UploadMat4("uView", ref Camera.viewMatrix);
+            skyboxShader.Bind();
+            skyboxShader.UploadMat4("uProjection", ref Camera.projMatrix);
+            skyboxShader.UploadMat4("uView", ref Camera.viewMatrix);
             GL.Disable(EnableCap.CullFace);
             SkyBox.pos = Camera.position;
-            SkyBox.Render(shader2);
+            SkyBox.Render(skyboxShader);
             GL.Enable(EnableCap.CullFace);
 
             SwapBuffers();

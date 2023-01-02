@@ -66,8 +66,8 @@ namespace BuildPlate_Editor
             pos = cameraPos;
             size = _size;
 
-            verts = VoxelData.SkyBox2.verts;
-            tris = VoxelData.SkyBox2.tris;
+            verts = VoxelData.SkyBox.verts;
+            tris = VoxelData.SkyBox.tris;
             InitMesh();
         }
 

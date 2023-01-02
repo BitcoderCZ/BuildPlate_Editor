@@ -209,59 +209,6 @@ namespace BuildPlate_Editor
 		}
 		public static class SkyBox
         {
-			const float first1 = 1f / 3f;
-			const float first2 = 2f / 3f;
-
-			public static readonly Vector2[][] voxelUvs = new Vector2[][] {
-				new Vector2[] { // Back Face
-					new Vector2(0.5f, first1),
-					new Vector2(0.5f, first2),
-					new Vector2(0.25f, first1),
-					new Vector2(0.25f, first2)
-				},
-				new Vector2[] { // Front Face
-					new Vector2(0.75f, first1),
-					new Vector2(0.75f, first2),
-					new Vector2(1.0f, first1),
-					new Vector2(1.0f, first2)
-				},
-				new Vector2[] { // Top Face
-					new Vector2(0.5f, 0f),
-					new Vector2(0.5f, first1),
-					new Vector2(0.25f, 0f),
-					new Vector2(0.25f, first1)
-				},
-				new Vector2[] { // Bottom Face
-					new Vector2(0.5f, first2),
-					new Vector2(0.5f, 1f),
-					new Vector2(0.25f, first2),
-					new Vector2(0.25f, 1f)
-				},
-				new Vector2[] { // Left Face
-					new Vector2(0.25f, first1),
-					new Vector2(0.25f, first2),
-					new Vector2(0.0f, first1),
-					new Vector2(0.0f, first2)
-				},
-				new Vector2[] { // Right Face
-					new Vector2(0.75f, first1),
-					new Vector2(0.75f, first2),
-					new Vector2(0.5f, first1),
-					new Vector2(0.5f, first2)
-				},
-			};
-			public static readonly int[,] tris = new int[6, 4] {
-				// 0 1 2 2 1 3
-				{0, 3, 1, 2}, // Back Face
-				{5, 6, 4, 7}, // Front Face
-				{3, 7, 2, 6}, // Top Face
-				{1, 5, 0, 4}, // Bottom Face
-				{4, 7, 0, 3}, // Left Face
-				{1, 2, 5, 6} // Right Face
-			};
-		}
-		public static class SkyBox2
-        {
 			public static Vector3[] verts = new Vector3[] {
 				// positions          
 				new Vector3(-1.0f,  1.0f, -1.0f),
@@ -308,12 +255,30 @@ namespace BuildPlate_Editor
 			};
 			public static uint[] tris;
 
-			static SkyBox2()
+			static SkyBox()
             {
 				tris = new uint[verts.Length];
                 for (uint i = 0; i < tris.Length; i++)
 					tris[i] = i;
             }
+		}
+		public static class Vine // -z, -x, +z, +x
+		{
+			const float offset1 = 0.1f;
+			const float offset2 = 1f - offset1;
+
+			public static readonly int[,] tris = new int[2, 4] { // vines have only back and front faces
+				{0, 3, 1, 2}, // Back Face
+				{1, 2, 0, 3}, // Front Face
+			};
+
+			public static readonly Vector3[,] verts = new Vector3[4, 4]
+			{
+				{ new Vector3(0f, 0f, offset2), new Vector3(1f, 0f, offset2), new Vector3(1f, 1f, offset2), new Vector3(0f, 1f, offset2) },
+				{ new Vector3(offset1, 0f, 0f), new Vector3(offset1, 0f, 1f), new Vector3(offset1, 1f, 1f), new Vector3(offset1, 1f, 0f) },
+				{ new Vector3(0f, 0f, offset1), new Vector3(1f, 0f, offset1), new Vector3(1f, 1f, offset1), new Vector3(0f, 1f, offset1) },
+				{ new Vector3(offset2, 0f, 0f), new Vector3(offset2, 0f, 1f), new Vector3(offset2, 1f, 1f), new Vector3(offset2, 1f, 0f) },
+			};
 		}
 	}
 }

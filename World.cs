@@ -109,7 +109,7 @@ namespace BuildPlate_Editor
             { "jungle_button", new []{ "planks_jungle" } },
         });
 
-        private static Dictionary<string, Func<int, string[]>> multiTextureBlocks = new Dictionary<string, Func<int, string[]>>() // texture => { data, return final texture}
+        private static Dictionary<string, Func<int, string[]>> specialTextureLoad = new Dictionary<string, Func<int, string[]>>() // texture => { data, return final texture}
         {
             { "planks", (int data) =>
                 {
@@ -656,6 +656,18 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { "vine", (int data) =>
+                {
+                    // make green
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "vine.png");
+                    for (int i = 0; i < db.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
+                        db.Data[i] = System.Drawing.Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                    }
+                    db.Bitmap.Save(textureBasePath + "vine.png");
+                    return new string[] { "vine" };
+                }
+            },
             // doors
             { "iron_door", (int data) =>
                 {
@@ -792,6 +804,29 @@ namespace BuildPlate_Editor
             { "vine", 19 },
         };
 
+        public static readonly bool[] RendererIsFullBlockLookUp = new bool[]
+        {
+            true, // normal
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true, // log
+            true, // stripped log
+            false,
+        };
 
         public delegate void RenderBlock(Vector3 pos, Vector3i cp/*chunk pos, pre multiplied*/, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles);
 
@@ -1137,19 +1172,19 @@ namespace BuildPlate_Editor
                     int r2 = GetRenderer(iPos + new Vector3i(-1, 0, 0) + cp);
                     int r3 = GetRenderer(iPos + new Vector3i(0, 0, 1) + cp);
                     int r4 = GetRenderer(iPos + new Vector3i(0, 0, -1) + cp);
-                    if (r1 == 7|| r1 == 12 || r1 == 0) {
+                    if (r1 == 7|| r1 == 12 || IsRendererFullBlock(r1)) {
                         CubeTex(tex[0], pos + new Vector3(0.35f, 0.15f, 0f), size2, ref vertices, ref triangles);
                         CubeTex(tex[0], pos + new Vector3(0.35f, -0.15f, 0f), size2, ref vertices, ref triangles);
                     }
-                    if (r2 == 7|| r2 == 12|| r2 == 0) {
+                    if (r2 == 7|| r2 == 12|| IsRendererFullBlock(r2)) {
                         CubeTex(tex[0], pos + new Vector3(-0.35f, 0.15f, 0f), size2, ref vertices, ref triangles);
                         CubeTex(tex[0], pos + new Vector3(-0.35f, -0.15f, 0f), size2, ref vertices, ref triangles);
                     }
-                    if (r3 == 7|| r3 == 12|| r3 == 0) {
+                    if (r3 == 7|| r3 == 12|| IsRendererFullBlock(r3)) {
                         CubeTex(tex[0], pos + new Vector3(0f, 0.15f, 0.35f), size3, ref vertices, ref triangles);
                         CubeTex(tex[0], pos + new Vector3(0f, -0.15f, 0.35f), size3, ref vertices, ref triangles);
                     }
-                    if (r4 == 7|| r4 == 12|| r4 == 0) {
+                    if (r4 == 7|| r4 == 12|| IsRendererFullBlock(r4)) {
                         CubeTex(tex[0], pos + new Vector3(0f, 0.15f, -0.35f), size3, ref vertices, ref triangles);
                         CubeTex(tex[0], pos + new Vector3(0f, -0.15f, -0.35f), size3, ref vertices, ref triangles);
                     }
@@ -1178,13 +1213,13 @@ namespace BuildPlate_Editor
                     int r2 = GetRenderer(iPos + new Vector3i(-1, 0, 0) + cp);
                     int r3 = GetRenderer(iPos + new Vector3i(0, 0, 1) + cp);
                     int r4 = GetRenderer(iPos + new Vector3i(0, 0, -1) + cp);
-                    if (r1 == 9|| r1 == 0)
+                    if (r1 == 9 || IsRendererFullBlock(r1))
                         CubeTex(tex[0], pos + new Vector3(0.3f, 0f, 0f), size2, ref vertices, ref triangles);
-                    if (r2 == 9|| r2 == 0)
+                    if (r2 == 9|| IsRendererFullBlock(r2))
                         CubeTex(tex[0], pos + new Vector3(-0.3f, 0f, 0f), size2, ref vertices, ref triangles);
-                    if (r3 == 9|| r3 == 0)
+                    if (r3 == 9|| IsRendererFullBlock(r3))
                         CubeTex(tex[0], pos + new Vector3(0f, 0f, 0.3f), size3, ref vertices, ref triangles);
-                    if (r4 == 9|| r4 == 0)
+                    if (r4 == 9|| IsRendererFullBlock(r4))
                         CubeTex(tex[0], pos + new Vector3(0f, 0f, -0.3f), size3, ref vertices, ref triangles);
                 }
             },
@@ -1394,15 +1429,15 @@ namespace BuildPlate_Editor
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)vertices.Count;
                         if (p == 2 || p == 3) { // top/bottom
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texTopBottom));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texTopBottom));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texTopBottom));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texTopBottom));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.voxelUvs[0], texTopBottom));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.voxelUvs[1], texTopBottom));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.voxelUvs[2], texTopBottom));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.voxelUvs[3], texTopBottom));
                         } else {
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texSide));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texSide));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texSide));
-                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texSide));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.voxelUvs[0], texSide));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.voxelUvs[1], texSide));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.voxelUvs[2], texSide));
+                            vertices.Add(new Vertex(pos + (VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.voxelUvs[3], texSide));
                         }
                         triangles.Add(firstVertIndex);
                         triangles.Add(firstVertIndex + 1);
@@ -1419,11 +1454,42 @@ namespace BuildPlate_Editor
                         ref vertices, ref triangles);
                 }
             },
-            { 19, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // vine
+            { 19, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // vine
                 {
-                    Vector3 offset = new Vector3(0f, 0f, 0f);
-                    Vector3 size = new Vector3(1f, 1f, 1f);
-                    CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                    Vector3 offset = new Vector3(-0.5f, -0.5f, -0.5f);
+
+                    uint tex = (uint)texA[0];
+
+                    int dir = data & 0b_1111; // -z, -x, +z, +x
+
+                    bool[] vineAt = new bool[4];
+                    int mask = 0b_0001;
+                    for (int i = 0; i < vineAt.Length; i++) // get every bit as bool
+                    {
+                        vineAt[i] = Convert.ToBoolean((dir & mask) >> i);
+                        mask <<= i;
+			        }
+
+                    for (int i = 0; i < vineAt.Length; i++)
+                    {
+                        if (vineAt[i]) {
+                            for (int p = 0; p < 2; p++)
+                            {
+                                uint firstVertIndex = (uint)vertices.Count;
+                                vertices.Add(new Vertex(pos + VoxelData.Vine.verts[i, VoxelData.Vine.tris[p, 0]] + offset, VoxelData.voxelUvs[0], tex));
+                                vertices.Add(new Vertex(pos + VoxelData.Vine.verts[i,VoxelData.Vine.tris[p, 1]] + offset, VoxelData.voxelUvs[1], tex));
+                                vertices.Add(new Vertex(pos + VoxelData.Vine.verts[i,VoxelData.Vine.tris[p, 2]] + offset, VoxelData.voxelUvs[2], tex));
+                                vertices.Add(new Vertex(pos + VoxelData.Vine.verts[i,VoxelData.Vine.tris[p, 3]] + offset, VoxelData.voxelUvs[3], tex));
+                        
+                                triangles.Add(firstVertIndex);
+                                triangles.Add(firstVertIndex + 1);
+                                triangles.Add(firstVertIndex + 2);
+                                triangles.Add(firstVertIndex + 2);
+                                triangles.Add(firstVertIndex + 1);
+                                triangles.Add(firstVertIndex + 3);
+                            }
+                        }
+			        }
                 }
             },
         };
@@ -1541,6 +1607,14 @@ namespace BuildPlate_Editor
             }
         }
 
+        public static bool IsRendererFullBlock(int renderer)
+        {
+            if (renderer < 0 || renderer >= RendererIsFullBlockLookUp.Length)
+                return false;
+            else
+                return RendererIsFullBlockLookUp[renderer];
+        }
+
         public static SubChunk[] chunks;
 
         public static void Init()
@@ -1582,8 +1656,8 @@ namespace BuildPlate_Editor
                     if (texReplacements.ContainsKey(blockName[0]))
                         blockName = texReplacements[blockName[0]].Cloned();
 
-                    if (multiTextureBlocks.ContainsKey(blockName[0]))
-                        blockName = multiTextureBlocks[blockName[0]].Invoke(paletteBlock.data);
+                    if (specialTextureLoad.ContainsKey(blockName[0]))
+                        blockName = specialTextureLoad[blockName[0]].Invoke(paletteBlock.data);
 
                     for (int i = 0; i < blockName.Length; i++) {
                         if (blockName[i].Contains("."))

@@ -91,8 +91,8 @@ namespace BuildPlate_Editor
                 texturesPath += '/';
             World.textureBasePath = texturesPath;
 #if DEBUG
-            //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\7cd6d53b-1715-4b22-9a99-d6d43edd61df.json";
-            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\2cb8bda2-c49b-4ead-887f-593d37bc2784.json";
+            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\70c9c5eb-580d-41d2-8201-2577fec29dd6.json";
+            //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\2cb8bda2-c49b-4ead-887f-593d37bc2784.json";
 #else
             Console.Write("Build plate to edit (.json): ");
             // json - api, plate - data only, plate64 - base64 encoded data

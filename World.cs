@@ -35,6 +35,7 @@ namespace BuildPlate_Editor
             { "jungle_stairs", new []{ "planks_jungle" } },
             { "spruce_stairs", new []{ "planks_spruce" } },
             { "dark_oak_stairs", new []{ "planks_big_oak" } },
+            { "birch_stairs", new []{ "planks_birch" } },
             { "stone_brick_stairs", new []{ "stonebrick" } },
             { "polished_andesite_stairs", new []{ "stone_andesite_smooth" } },
             { "polished_diorite_stairs", new []{ "stone_diorite_smooth" } },
@@ -177,15 +178,15 @@ namespace BuildPlate_Editor
                     int logType = data & 0b_0011;
                     switch (logType) {
                         case 0:
-                            return new [] { "log_oak_top" } ;
+                            return new [] { "log_oak", "log_oak_top" } ;
                         case 1:
-                            return new [] { "log_spruce_top" } ;
+                            return new [] { "log_spruce", "log_spruce_top" } ;
                         case 2:
-                            return new [] { "log_birch_top" } ;
+                            return new [] { "log_birch", "log_birch_top" } ;
                         case 3:
-                            return new [] { "log_jungle_top" } ;
+                            return new [] { "log_jungle", "log_jungle_top" } ;
                         default:
-                            return new [] { "log_oak_top" } ;
+                            return new [] { "log_oak", "log_oak_top" } ;
                     }
                 }
             },
@@ -695,6 +696,19 @@ namespace BuildPlate_Editor
                     }
                 } // oak
             },
+            { "birch_door", (int data) =>
+                {
+                    int upper_block_bit = (data & 0b_1000) >> 3;
+                    switch (upper_block_bit) {
+                        case 0:
+                            return new [] { "door_birch_lower" };
+                        case 1:
+                            return new [] { "door_birch_upper" };
+                        default:
+                            return new [] { "door_birch_lower" };
+                    }
+                } // oak
+            },
 
 
             { "", (int data) =>
@@ -775,12 +789,13 @@ namespace BuildPlate_Editor
             { "snow_layer", 15 },
             { "powered_repeater", 16 },
             { "unpowered_repeater", 16 },
+            { "vine", 19 },
         };
 
 
         public delegate void RenderBlock(Vector3 pos, Vector3i cp/*chunk pos, pre multiplied*/, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles);
 
-        // TODO stair other corner
+        // TODO stair other corner, Data meaning from: https://minecraft.fandom.com/wiki/Block_states
         public static Dictionary<int, RenderBlock> blockRenderers = new Dictionary<int, RenderBlock>()
         {
             { 0, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // full
@@ -1360,6 +1375,57 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { 17, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // log
+                {
+                    Vector3 offset = new Vector3(-0.5f, -0.5f, -0.5f);
+
+                    uint texSide = (uint)texA[0];
+                    uint texTopBottom = (uint)texA[1];
+
+                    int dir = (data & 0b_1100) >> 2; // 0 - y, 1 - x, 2 - z
+                    Matrix3 mat = Matrix3.Identity;
+
+                    if (dir == 1) {
+                        mat = Matrix3.CreateRotationZ(1.5708f); // 90 degrees
+                    } else if (dir == 2) {
+                        mat = Matrix3.CreateRotationX(1.5708f); // 90 degrees
+                    }
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)vertices.Count;
+                        if (p == 2 || p == 3) { // top/bottom
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texTopBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texTopBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texTopBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texTopBottom));
+                        } else {
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texSide));
+                        }
+                        triangles.Add(firstVertIndex);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 3);
+                    }
+                }
+            },
+            { 18, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // log stripped
+                {
+                    blockRenderers[17](pos, cp, texA, data << 2/*here axis is 0b0011, for normal logs it's 0b1100 so we need to shift it*/, 
+                        ref vertices, ref triangles);
+                }
+            },
+            { 19, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // vine
+                {
+                    Vector3 offset = new Vector3(0f, 0f, 0f);
+                    Vector3 size = new Vector3(1f, 1f, 1f);
+                    CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                }
+            },
         };
 
         private static BuildPlate plate;
@@ -1556,6 +1622,10 @@ namespace BuildPlate_Editor
                     string blockName = blockNames[subchunk][plate.sub_chunks[subchunk].blocks[block]];
                     if (blockRenderersLookUp.ContainsKey(blockName))
                         renderers[block] = blockRenderersLookUp[blockName];
+                    else if (blockName.Contains("stripped")) // stripped log
+                        renderers[block] = 18;
+                    else if (blockName.Contains("log"))
+                        renderers[block] = 17;
                     else if (blockName.Contains("pressure_plate"))
                         renderers[block] = 14;
                     else if (blockName.Contains("gate"))
@@ -1580,7 +1650,11 @@ namespace BuildPlate_Editor
 
                 Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count - 1];
                 for (int i = 0; i < palette.Length; i++) {
-                    palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i + 1].name, plate.sub_chunks[subchunk].block_palette[i].data, textures[i + 1]);
+                    int[] _tex = textures[i].Cloned();
+                    for (int j = 0; j < _tex.Length; j++) {
+                        _tex[j] = _tex[j] + 1; 
+                    }
+                    palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i + 1].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
                     Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, Texture: {palette[i].textures[0]}");
                 }
 

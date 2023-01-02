@@ -70,9 +70,11 @@ namespace BuildPlate_Editor
                     y = 16;
 
                 int renderer = renderers[currentBlock];
-                if (renderer > -1 && blocks[currentBlock] < palette.Length) // don't render air
-                    World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, palette[blocks[currentBlock]].textures, palette[blocks[currentBlock]].data,
+                if (renderer > -1 && blocks[currentBlock] < palette.Length) { // don't render air
+                    Palette pal = palette[blocks[currentBlock]];
+                    World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
                         ref vertices, ref triangles);
+                }
 
                 z = origz;
                 y = origy;

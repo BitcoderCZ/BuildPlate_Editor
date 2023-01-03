@@ -71,9 +71,20 @@ namespace BuildPlate_Editor
 
                 int renderer = renderers[currentBlock];
                 if (renderer > -1 && blocks[currentBlock] < palette.Length) { // don't render air
-                    Palette pal = palette[blocks[currentBlock]];
+#if DEBUG
+                    uint blockId = blocks[currentBlock];
+                    Palette pal = palette[blockId];
                     World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
                         ref vertices, ref triangles);
+#else
+                    try {
+                        Palette pal = palette[blocks[currentBlock]];
+                        World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
+                            ref vertices, ref triangles);
+                    } catch (Exception ex) {
+                        Util.Exit(EXITCODE.World_Render_Block, ex, $"Block ID: {blocks[currentBlock]}, SubChunk pos: {pos}, Renderer ID: {renderer}");
+                    }
+#endif
                 }
 
                 z = origz;
@@ -165,5 +176,46 @@ namespace BuildPlate_Editor
 
         public int GetRenderer(Vector3i pos)
             => GetRenderer(pos.X, pos.Y, pos.Z);
+
+        public void GetBlockIndex(int bx, int by, int bz, out int blockIndex)
+        {
+            Vector3i block = new Vector3i(bx, by, bz);
+
+            int x = 0;
+            int y = 0;
+            int z = 0;
+            int origx;
+            int origy;
+            int origz;
+            Vector3i offset = new Vector3i(pos.X * VoxelData.ChunkWidth, pos.Y * VoxelData.ChunkHeight, pos.Z * VoxelData.ChunkWidth);
+
+            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
+                z++;
+                if (z == 16) { z = 0; y += 1; }
+                if (y == 16) { y = 0; x += 1; }
+
+                origz = z;
+                origy = y;
+
+                if (z == 0) {
+                    z = 16;
+                    y -= 1;
+                }
+
+                if (y == -1)
+                    y = 16;
+
+                if (new Vector3i(x, y, z) + offset == block) {
+                    blockIndex = currentBlock;
+                    return;
+                }
+                    
+
+                z = origz;
+                y = origy;
+            }
+
+            blockIndex = -1;
+        }
     }
 }

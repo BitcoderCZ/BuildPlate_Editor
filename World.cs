@@ -15,15 +15,19 @@ namespace BuildPlate_Editor
 {
     public static class World
     {
+        public static int number { get; private set; }
+
         // custom added reeds (was in .tga?)
-        // NO custom edited = water, redstone_dust_dot, lava_still, oak_leaves
         private static readonly ReadOnlyDictionary<string, string[]> texReplacements = new ReadOnlyDictionary<string, string[]>(new Dictionary<string, string[]>()
         {
             { "brick_block", new []{ "brick" } },
             { "tnt", new []{ "tnt_side" } },
             { "lava", new []{ "lava_still" } },
-            { "water", new []{ "water_still" } },
             { "cobblestone_wall", new []{ "cobblestone" } },
+            // log
+            { "stripped_dark_oak_log", new []{ "stripped_dark_oak_log", "stripped_dark_oak_log_top" } },
+            { "stripped_oak_log", new []{ "stripped_oak_log", "stripped_oak_log_top" } },
+            { "stripped_spruce_log", new []{ "stripped_spruce_log", "stripped_spruce_log_top" } },
             // slabs
             { "double_wooden_slab", new []{ "planks" } },
             { "double_stone_slab", new []{ "stone" } },
@@ -63,7 +67,6 @@ namespace BuildPlate_Editor
             { "powered_repeater", new []{ "repeater_on", /*"redstone_torch_on"*/ } },
             { "unpowered_repeater", new []{ "repeater_off", /*"redstone_torch_off"*/ } },
             { "dark_oak_fence_gate", new []{ "planks_big_oak" } },
-            { "grass", new []{ "grass_carried" } },
             { "wheat", new []{ "wheat_stage_7" } },
             { "carrots", new []{ "carrots_stage_3" } },
             { "beetroot", new []{ "beetroots_stage_3" } },
@@ -72,6 +75,7 @@ namespace BuildPlate_Editor
             { "torch", new []{ "torch_on" } },
             { "sandstone", new []{ "sandstone_normal" } },
             { "red_mushroom", new []{ "mushroom_red" } },
+            { "brown_mushroom", new []{ "mushroom_brown" } },
             { "tripWire", new []{ "trip_wire" } },
             { "pumpkin_stem", new []{ "pumpkin_stem_disconnected" } },
             { "melon_stem", new []{ "melon_stem_disconnected" } },
@@ -668,6 +672,44 @@ namespace BuildPlate_Editor
                     return new string[] { "vine" };
                 }
             },
+            { "grass", (int data) =>
+                {
+                    // side and dirt need to combined
+                    TargaImage img = new TargaImage(textureBasePath + "grass_side.tga");
+                    SystemPlus.Utils.DirectBitmap side = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image);
+                    img.Dispose();
+                    SystemPlus.Utils.DirectBitmap dirt = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "dirt.png");
+                    for (int i = 0; i < side.Data.Length; i++) {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(side.Data[i]);
+                        if (c.A == 0)
+                            side.Data[i] = dirt.Data[i];
+                        else
+                            side[i] =  System.Drawing.Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                    }
+                    side.Bitmap.Save(textureBasePath + "grass_side.png");
+                    return new string[] { "grass_side.png", "grass_carried", "dirt" };
+                }
+            },
+            { "water", (int data) =>
+                {
+                    // make green
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "water_still.png");
+                    SystemPlus.Utils.DirectBitmap water = new SystemPlus.Utils.DirectBitmap(16, 16);
+
+                    water.Write(0, db.Data, 0, water.Data.Length);
+
+                    for (int i = 0; i < water.Data.Length; i++)
+                    {
+                        System.Drawing.Color c = System.Drawing.Color.FromArgb(water.Data[i]);
+                        water.Data[i] = System.Drawing.Color.FromArgb(200, c.R, c.G, c.B).ToArgb();
+                    }
+
+                    water.Bitmap.Save(textureBasePath + "water.png");
+                    return new string[] { "water" };
+                }
+            },
+            { "cactus", (int data) => new [] { "cactus_side.tga", "cactus_top.tga", "cactus_bottom.tga" }
+            },
             // doors
             { "iron_door", (int data) =>
                 {
@@ -784,14 +826,18 @@ namespace BuildPlate_Editor
             { "carrots", 5 },
             { "potatoes", 5 },
             { "beetroot", 5 },
-            { "pumpkin_stem", 8 },
-            { "melon_stem", 8 },
             { "carpet", 6 },
             { "rainbow_carpet", 6 },
-            { "waterlily", 6 },
+            { "waterlily", 6 }, // lilipad
             { "fence", 7 },
+            { "pumpkin_stem", 8 },
+            { "melon_stem", 8 },
             { "double_plant", 8 },
             { "tallgrass", 8 },
+            { "red_mushroom", 8 },
+            { "brown_mushroom", 8 },
+            { "deadbush", 8 },
+            { "buttercup", 8 },
             { "iron_bars", 9 },
             { "ladder", 10 },
             { "lantern", 11 },
@@ -802,6 +848,8 @@ namespace BuildPlate_Editor
             { "powered_repeater", 16 },
             { "unpowered_repeater", 16 },
             { "vine", 19 },
+            { "grass", 20 },
+            { "cactus", 21 },
         };
 
         public static readonly bool[] RendererIsFullBlockLookUp = new bool[]
@@ -941,12 +989,12 @@ namespace BuildPlate_Editor
             { 3, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // stair's other part
                 {
                     int rot = data & 0b_0011;
-                    bool upsideDown = Convert.ToBoolean((data & 0b_0100) >> 2);
-                    Vector3 offset = new Vector3(0.25f, 0.25f, 0f);
+                    bool upper = Convert.ToBoolean((data & 0b_0100) >> 2);
+                    Vector3 offset = new Vector3(0.25f, -0.25f, 0f);
                     Vector3 size = new Vector3(0.5f, 0.5f, 1f);
 
-                    if (upsideDown)
-                        offset.Y = -0.25f;
+                    if (upper)
+                        offset.Y = 0.25f;
 
                     if (rot == 1)
                         offset.X = -0.25f;
@@ -1012,6 +1060,9 @@ namespace BuildPlate_Editor
 
                     offset = new Vector3(-0.5f, -0.5f, -0.5f);
 
+                    if (!upper)
+                        offset.Y += 0.5f;
+
                     Vector3[] verts;
                     Vector2[] uvs = VoxelData.Stair.zUvs;
 
@@ -1059,8 +1110,6 @@ namespace BuildPlate_Editor
                         triangles.Add(firstVertIndex + 1);
                         triangles.Add(firstVertIndex + 3);
                     }
-
-                    //CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
 
                     GetBlockIndex(iPos + (offsets[rot] * (-1)) + cp, out subChunkIndex, out blockIndex);
 
@@ -1492,6 +1541,81 @@ namespace BuildPlate_Editor
 			        }
                 }
             },
+            { 20, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // multi texture
+                {
+                    bool upper = Convert.ToBoolean((data & 0b_1000) >> 3);
+                    uint texSide = (uint)texA[0];
+                    uint texTop = (uint)texA[texA.Length > 1 ? 1 : 0];
+                    uint texBottom = (uint)texA[texA.Length > 2 ? 2 : (texA.Length > 1 ? 1 : 0)];
+
+                    Vector3 offset = new Vector3(-0.5f, -0.5f, -0.5f);
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)vertices.Count;
+                        if (p == 2) { // top
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texTop));
+                        } else if (p == 3) { // bottom
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texBottom));
+                        }
+                        else {
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.voxelUvs[0], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.voxelUvs[1], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.voxelUvs[2], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.voxelUvs[3], texSide));
+                        }
+                        triangles.Add(firstVertIndex);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 3);
+                    }
+                }
+            },
+            { 21, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // cactus
+                {
+                    bool upper = Convert.ToBoolean((data & 0b_1000) >> 3);
+                    uint texSide = (uint)texA[0];
+                    uint texTop = (uint)texA[1];
+                    uint texBottom = (uint)texA[2];
+
+                    Vector3 offset = new Vector3(-0.5f, -0.5f, -0.5f);
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)vertices.Count;
+                        if (p == 4) { // bottom
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 0]] + offset, VoxelData.Cactus.uvs[0], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 1]] + offset, VoxelData.Cactus.uvs[1], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 2]] + offset, VoxelData.Cactus.uvs[2], texBottom));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 3]] + offset, VoxelData.Cactus.uvs[3], texBottom));
+                        } else if (p == 5) { // top
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 0]] + offset, VoxelData.Cactus.uvs[0], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 1]] + offset, VoxelData.Cactus.uvs[1], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 2]] + offset, VoxelData.Cactus.uvs[2], texTop));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 3]] + offset, VoxelData.Cactus.uvs[3], texTop));
+
+                        } else {
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 0]] + offset, VoxelData.Cactus.uvs[0], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 1]] + offset, VoxelData.Cactus.uvs[1], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 2]] + offset, VoxelData.Cactus.uvs[2], texSide));
+                            vertices.Add(new Vertex(pos + VoxelData.Cactus.verts[VoxelData.Cactus.tris[p, 3]] + offset, VoxelData.Cactus.uvs[3], texSide));
+                        }
+                        
+                        triangles.Add(firstVertIndex);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 3);
+                    }
+                }
+            },
         };
 
         private static BuildPlate plate;
@@ -1564,36 +1688,7 @@ namespace BuildPlate_Editor
         public static void GetBlockIndex(int x, int y, int z, out int subChunkIndex, out int blockIndex)
         {
             subChunkIndex = -1;
-
-            int bx;
-            if (x >= 0)
-                bx = x % 16;
-            else
-                bx = 16 - Math.Abs(x % 16);
-
-            int by;
-            if (y >= 0)
-                by = y % 16;
-            else
-                by = 16 - Math.Abs(y % 16);
-
-            int bz;
-            if (z >= 0)
-                bz = z % 16;
-            else
-                bz = 16 - Math.Abs(z % 16);
-            if (bz == 0)
-                bz = 16;
-
-
-
-            blockIndex = bz + by * 16 + bx * 256;
-            blockIndex--; // idk, doesn't work without this
-
-            if (blockIndex >= 4096) {
-                return;
-            }
-
+            blockIndex = -1;
 
             for (int i = 0; i < plate.sub_chunks.Count; i++) {
                 Vector3i pos = (Vector3i)plate.sub_chunks[i].position * 16;
@@ -1602,9 +1697,19 @@ namespace BuildPlate_Editor
                     y >= pos.Y && y <= posMax.Y &&
                     z >= pos.Z && z <= posMax.Z) {
                     subChunkIndex = i;
-                    return;
+                    break;
                 }
             }
+
+            if (subChunkIndex == -1)
+                return;
+
+            chunks[subChunkIndex].GetBlockIndex(x, y, z, out blockIndex);
+
+            if (blockIndex >= 4096 || blockIndex == -1) {
+                subChunkIndex = -1;
+                return;
+            }        
         }
 
         public static bool IsRendererFullBlock(int renderer)
@@ -1657,7 +1762,7 @@ namespace BuildPlate_Editor
                         blockName = texReplacements[blockName[0]].Cloned();
 
                     if (specialTextureLoad.ContainsKey(blockName[0]))
-                        blockName = specialTextureLoad[blockName[0]].Invoke(paletteBlock.data);
+                        blockName = specialTextureLoad[blockName[0]].Invoke(paletteBlock.data).Cloned();
 
                     for (int i = 0; i < blockName.Length; i++) {
                         if (blockName[i].Contains("."))
@@ -1681,18 +1786,21 @@ namespace BuildPlate_Editor
                 }
 
                 int taid;
+#if DEBUG
+                taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+#else
                 try {
                     taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
                 } catch (Exception ex) {
-                    Console.WriteLine($"Exception was thrown while creating texture array: {ex}");
-                    Console.WriteLine("Press any key to exit...");
-                    Console.ReadKey(true);
-                    Environment.Exit(3);
+                    Util.Exit(EXITCODE.World_Load_TextureArray, ex);
                     return; // doesn't go here, just that vs is happy
                 }
+#endif
 
                 int[] renderers = new int[plate.sub_chunks[subchunk].blocks.Count];
                 for (int block = 0; block < plate.sub_chunks[subchunk].blocks.Count; block++) {
+                    if (plate.sub_chunks[subchunk].blocks[block] >= plate.sub_chunks[subchunk].block_palette.Count)
+                        throw new Exception();
                     string blockName = blockNames[subchunk][plate.sub_chunks[subchunk].blocks[block]];
                     if (blockRenderersLookUp.ContainsKey(blockName))
                         renderers[block] = blockRenderersLookUp[blockName];
@@ -1722,14 +1830,22 @@ namespace BuildPlate_Editor
                         renderers[block] = 0;
                 }
 
-                Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count - 1];
+                /*Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count - 1];
                 for (int i = 0; i < palette.Length; i++) {
                     int[] _tex = textures[i].Cloned();
-                    for (int j = 0; j < _tex.Length; j++) {
+                    for (int j = 0; j < _tex.Length; j++)
                         _tex[j] = _tex[j] + 1; 
-                    }
                     palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i + 1].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
                     Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, Texture: {palette[i].textures[0]}");
+                }*/
+                Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
+                for (int i = 0; i < palette.Length; i++) {
+                    int[] _tex = textures[i].Cloned();
+                    for (int j = 0; j < _tex.Length; j++)
+                        _tex[j] = _tex[j] + 1;
+                    palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
+                    Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, " +
+                        $"Textures: {textures[i].Length}");
                 }
 
                 chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, 

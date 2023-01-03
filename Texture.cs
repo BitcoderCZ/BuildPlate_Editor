@@ -138,15 +138,22 @@ namespace BuildPlate_Editor
                 string texPath = texturesToLoad[i];
 
                 if (!File.Exists(texPath)) {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     string name = Path.GetFileNameWithoutExtension(texPath);
-                    if (name != "air" && !name.Contains("constraint"))
-                        Console.WriteLine($"Block texture {Path.GetFileName(texPath)}, wasn't found");
-                    Console.ResetColor();
-                    texPath = Program.baseDir + "Data\\Textures\\Black.png";
+                    if (name != "air" && !name.Contains("constraint")) {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write($"Block texture {Path.GetFileName(texPath)}, wasn't found");
+                        Console.ResetColor();
+                        Console.WriteLine($", Path: {texPath}");
+                    }
+                    texPath = Program.baseDir + "Data\\Textures\\Notfound.png";
                 }
 
-                bm = new Bitmap(texPath);
+                if (Path.GetExtension(texPath) == ".tga") {
+                    TargaImage img = new TargaImage(texPath);
+                    bm = new Bitmap(img.Image.Clone(new Rectangle(0, 0, img.Header.Width, img.Header.Height), System.Drawing.Imaging.PixelFormat.Format32bppArgb));
+                    img.Dispose();
+                } else
+                    bm = new Bitmap(texPath);
 
                 if (flip != TexFlip.None) {
                     if ((flip & TexFlip.Vertical) == TexFlip.Vertical)

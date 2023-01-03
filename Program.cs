@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using SystemPlus;
@@ -19,6 +20,10 @@ namespace BuildPlate_Editor
 
         static void Main(string[] args)
         {
+            // this will run on console close
+            handler = new ConsoleEventDelegate(ConsoleEventCallback);
+            SetConsoleCtrlHandler(handler, true);
+
             // Get base path (.exe location)
             string myExecutable = Assembly.GetEntryAssembly().Location;
 
@@ -91,7 +96,8 @@ namespace BuildPlate_Editor
                 texturesPath += '/';
             World.textureBasePath = texturesPath;
 #if DEBUG
-            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\70c9c5eb-580d-41d2-8201-2577fec29dd6.json";
+            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json";
+            //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json"; // fancy
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\2cb8bda2-c49b-4ead-887f-593d37bc2784.json";
 #else
             Console.Write("Build plate to edit (.json): ");
@@ -157,7 +163,21 @@ namespace BuildPlate_Editor
             Console.WriteLine("OpenGL version is low. The editor might not work correctly");
             Console.WriteLine("Press ENTER to continue anyway...");
             if (Console.ReadKey(true).Key != ConsoleKey.Enter)
-                Environment.Exit(2);
+                Util.Exit(EXITCODE.OpenGL_LowVersion);
         }
+
+        // Handle on close event
+        static bool ConsoleEventCallback(int eventType)
+        {
+            if (eventType == 2) { // on exit
+                Util.Exit(EXITCODE.Normal);
+            }
+            return false;
+        }
+        static ConsoleEventDelegate handler;   // Keeps it from getting garbage collected
+                                               
+        private delegate bool ConsoleEventDelegate(int eventType);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
     }
 }

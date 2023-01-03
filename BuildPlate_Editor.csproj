@@ -83,6 +83,7 @@
     <Compile Include="BuildPlateDimension.cs" />
     <Compile Include="BuildPlateOffset.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="EXITCODE.cs" />
     <Compile Include="GLGetVersion.cs" />
     <Compile Include="JsonBuildPlate.cs" />
     <Compile Include="Maths\Vector2i.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Shader.cs" />
     <Compile Include="SkyBox.cs" />
     <Compile Include="SubChunk.cs" />
+    <Compile Include="TargaImage.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Vertex.cs" />
@@ -131,7 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="1051469223874011206.ico" />
-    <Content Include="Data\Textures\Black.png">
+    <Content Include="Data\Textures\Notfound.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\Textures\Skybox_0.png">

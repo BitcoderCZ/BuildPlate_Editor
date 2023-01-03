@@ -49,9 +49,7 @@ namespace BuildPlate_Editor
             try {
                 World.Init();
             } catch (Exception ex) {
-                Console.WriteLine($"Failed to initialize World: {ex}");
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey(true);
+                Util.Exit(EXITCODE.World_Unknown, ex);
             }
 #endif
 

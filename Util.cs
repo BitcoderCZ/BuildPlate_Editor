@@ -190,5 +190,34 @@ namespace BuildPlate_Editor
             key4.SetValue("", $"\"{OpenWith}\" %1");
             key4.Flush();
         }
+
+        public static void Exit(EXITCODE code, Exception ex = null, string message = null)
+        {
+            if (code == EXITCODE.Normal)
+                Environment.Exit((int)code);
+
+            string exceptionMessage = "None";
+            if (ex != null)
+                exceptionMessage = $"\n  Type: {ex.GetType()}\n  Source: {ex.Source}\n  StackTrace: {ex.StackTrace}";
+
+            string exitMessage = "None";
+            if (message != null)
+                exitMessage = message;
+
+            Console.WriteLine($"\nExited with Code: {(int)code}, ExitCodeName: {Enum.GetName(typeof(EXITCODE), code)}");
+            if (ex != null)
+                Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Exception: {exceptionMessage}");
+            Console.ResetColor();
+
+            if (message != null)
+                Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"Message: {exitMessage}");
+            Console.ResetColor();
+
+            Console.WriteLine("Press any key to close...");
+            Console.ReadKey(true);
+            Environment.Exit((int)code);
+        }
     }
 }

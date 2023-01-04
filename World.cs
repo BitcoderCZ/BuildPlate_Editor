@@ -710,6 +710,27 @@ namespace BuildPlate_Editor
             },
             { "cactus", (int data) => new [] { "cactus_side.tga", "cactus_top.tga", "cactus_bottom.tga" }
             },
+            { "sapling", (int data) =>
+                {
+                    int type = data & 0b_0111;
+                    switch (type) {
+                        case 0:
+                            return new [] { "sapling_oak" };
+                        case 1:
+                            return new [] { "sapling_spruce" };
+                        case 2:
+                            return new [] { "sapling_birch" };
+                        case 3:
+                            return new [] { "sapling_jungle" };
+                        case 4:
+                            return new [] { "sapling_acacia" };
+                        case 5:
+                            return new [] { "sapling_roofed_oak" }; // dark oak
+                        default:
+                            return new [] { "sapling_oak" };
+                    }
+                }
+            },
             // doors
             { "iron_door", (int data) =>
                 {
@@ -838,6 +859,7 @@ namespace BuildPlate_Editor
             { "brown_mushroom", 8 },
             { "deadbush", 8 },
             { "buttercup", 8 },
+            { "sapling", 8 },
             { "iron_bars", 9 },
             { "ladder", 10 },
             { "lantern", 11 },
@@ -850,6 +872,7 @@ namespace BuildPlate_Editor
             { "vine", 19 },
             { "grass", 20 },
             { "cactus", 21 },
+            { "water", 22 },
         };
 
         public static readonly bool[] RendererIsFullBlockLookUp = new bool[]
@@ -881,11 +904,25 @@ namespace BuildPlate_Editor
         // TODO stair other corner, Data meaning from: https://minecraft.fandom.com/wiki/Block_states
         public static Dictionary<int, RenderBlock> blockRenderers = new Dictionary<int, RenderBlock>()
         {
-            { 0, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // full
+            { 0, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> verts, ref List<uint> tris) => // full
                 {
                     Vector3 offset = new Vector3(0f, 0f, 0f);
                     Vector3 size = new Vector3(1f, 1f, 1f);
-                    CubeTex(tex[0], pos + offset, size, ref vertices, ref triangles);
+                    uint tex = (uint)texA[0];
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)verts.Count;
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] * size - size / 2f, VoxelData.voxelUvs[0], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] * size - size / 2f, VoxelData.voxelUvs[1], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] * size - size / 2f, VoxelData.voxelUvs[2], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] * size - size / 2f, VoxelData.voxelUvs[3], tex));
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
                 }
             },
             { 1, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // slab
@@ -1616,6 +1653,32 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { 22, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> verts, ref List<uint> tris) => // water
+                {
+                    Vector3 offset = new Vector3(0f, 0f, 0f);
+                    Vector3 size = new Vector3(1f, 1f, 1f);
+                    uint tex = (uint)texA[0];
+
+                    Vector3i iPos = new Vector3i((int)pos.X, (int)pos.Y, (int)pos.Z);
+
+                    for (int p = 0; p < 6; p++) {
+                        int rend = GetRenderer(iPos + cp + VoxelData.faceChecks[p]);
+                        if (rend == 22)
+                            continue;
+                        uint firstVertIndex = (uint)verts.Count;
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 0]] * size - size / 2f, VoxelData.voxelUvs[0], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 1]] * size - size / 2f, VoxelData.voxelUvs[1], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 2]] * size - size / 2f, VoxelData.voxelUvs[2], tex));
+                        verts.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.voxelTris[p, 3]] * size - size / 2f, VoxelData.voxelUvs[3], tex));
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
+                }
+            },
         };
 
         private static BuildPlate plate;
@@ -1667,7 +1730,10 @@ namespace BuildPlate_Editor
         public static Palette GetBlockPalette(int x, int y, int z)
         {
             GetBlockIndex(x, y, z, out int subChunkIndex, out int blockIndex);
-            return GetBlockPalette(subChunkIndex, blockIndex);
+            if (subChunkIndex < 0)
+                return Palette.NULL;
+            else
+                return GetBlockPalette(subChunkIndex, blockIndex);
         }
         public static Palette GetBlockPalette(int subChunkIndex, int blockIndex)
             => chunks[subChunkIndex].palette[chunks[subChunkIndex].blocks[blockIndex]];

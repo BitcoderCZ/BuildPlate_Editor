@@ -8,6 +8,8 @@ namespace BuildPlate_Editor
 {
     public class Palette
     {
+        public static readonly Palette NULL = new Palette("bpe:null", 0, new int[0]);
+
         public int[] textures;
         public int data;
         public string name;

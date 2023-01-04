@@ -82,7 +82,15 @@ namespace BuildPlate_Editor
                         World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
                             ref vertices, ref triangles);
                     } catch (Exception ex) {
-                        Util.Exit(EXITCODE.World_Render_Block, ex, $"Block ID: {blocks[currentBlock]}, SubChunk pos: {pos}, Renderer ID: {renderer}");
+                        uint b = blocks[currentBlock];
+                        string name = "Couldn't get";
+                        string data = "Couldn't get";
+                        if (b >= 0 && b < palette.Length) {
+                            name = palette[b].name;
+                            data = palette[b].data.ToString();
+                        }
+                        Util.Exit(EXITCODE.World_Render_Block, ex, $"Block ID: {blocks[currentBlock]}, SubChunk pos: {pos}, Renderer ID: {renderer}, " +
+                            $"Block Name: {name}, Block Data: {data}");
                     }
 #endif
                 }
@@ -92,14 +100,7 @@ namespace BuildPlate_Editor
             }
         }
 
-        void AddVoxelDataToChunk(Vector3i pos, uint blockId)
-        {
-            int renderer = GetRenderer(pos);
-            if (renderer > -1)
-                World.blockRenderers[renderer](pos, this.pos * 16, palette[blockId].textures, palette[blockId].data, ref vertices, ref triangles);
-        }
-
-        void InitMesh()
+        public void InitMesh()
         {
             GL.CreateVertexArrays(1, out vao);
             GL.BindVertexArray(vao);

@@ -93,7 +93,7 @@ namespace BuildPlate_Editor
 
             for (int i = 0; i < paths.Length; i++) {
 
-                DirectBitmap db = DirectBitmap.Load(paths[i]);
+                DirectBitmap db = DirectBitmap.Load(paths[i], false);
 
                 BitmapData data = db.Bitmap.LockBits(new Rectangle(0, 0, db.Width, db.Height), ImageLockMode.ReadOnly,
                     System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -201,6 +201,105 @@ namespace BuildPlate_Editor
             db.Bitmap.UnlockBits(data);
 
             db.Dispose();
+        }
+
+        public Texture(DirectBitmap db)
+        {
+            Width = db.Width;
+            Height = db.Height;
+
+            int slot = 0;
+            GL.ActiveTexture(TextureUnit.Texture0 + slot);
+            GL.GenTextures(1, out id);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+
+            BitmapData data = db.Bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, Width, Height, 0,
+                PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            db.Bitmap.UnlockBits(data);
+
+            db.Dispose();
+        }
+
+        public Texture(BitmapData data, TextureWrapMode wrapMode)
+        {
+            Width = data.Width;
+            Height = data.Height;
+
+            int slot = 0;
+            GL.ActiveTexture(TextureUnit.Texture0 + slot);
+            GL.GenTextures(1, out id);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, Width, Height, 0,
+                PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+        }
+
+        public Texture(int[] pixels, int width, int height, TextureWrapMode wrapMode)
+        {
+            Width = width;
+            Height = height;
+
+            int slot = 0;
+            GL.ActiveTexture(TextureUnit.Texture0 + slot);
+            GL.GenTextures(1, out id);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, Width, Height, 0,
+                PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+        }
+
+
+        public DirectBitmap GetDB()
+        {
+            DirectBitmap db = new DirectBitmap(Width, Height);
+            BitmapData data = db.Bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly,
+               System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            GL.BindTexture(TextureTarget.Texture2D, id);
+            GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+            db.Bitmap.UnlockBits(data);
+            return db;
+        }
+
+        public static DirectBitmap GetDB(int id)
+        {
+            int Width, Height;
+            GL.BindTexture(TextureTarget.Texture2D, id);
+            GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureWidth, out Width);
+            GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureHeight, out Height);
+            DirectBitmap db = new DirectBitmap(Width, Height);
+            BitmapData data = db.Bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly,
+               System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+            db.Bitmap.UnlockBits(data);
+            return db;
         }
     }
 

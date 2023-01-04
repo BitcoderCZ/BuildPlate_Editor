@@ -84,6 +84,7 @@
     <Compile Include="BuildPlateOffset.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="EXITCODE.cs" />
+    <Compile Include="Font.cs" />
     <Compile Include="GLGetVersion.cs" />
     <Compile Include="JsonBuildPlate.cs" />
     <Compile Include="Maths\Vector2i.cs" />
@@ -96,14 +97,32 @@
     <Compile Include="SubChunk.cs" />
     <Compile Include="TargaImage.cs" />
     <Compile Include="Texture.cs" />
+    <Compile Include="UI\GUI.cs" />
+    <Compile Include="UI\GUIElement.cs" />
+    <Compile Include="UI\IGUIElement.cs" />
+    <Compile Include="UI\IRenderObject.cs" />
+    <Compile Include="UI\UIButton.cs" />
+    <Compile Include="UI\UICheckBox.cs" />
+    <Compile Include="UI\UIImage.cs" />
+    <Compile Include="UI\UISliceButton.cs" />
+    <Compile Include="UI\UISliceImage.cs" />
+    <Compile Include="UI\UISlider.cs" />
+    <Compile Include="UI\UItext.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Vertex.cs" />
+    <Compile Include="Vertex2D.cs" />
     <Compile Include="VoxelData.cs" />
     <Compile Include="Window.cs" />
     <Compile Include="World.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Data\Fonts\Minecraft.ifd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Fonts\Minecraft.ifh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Data\Shaders\skybox.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -157,6 +176,25 @@
     <Content Include="Data\Textures\Skybox_Cold_Sunset\Cold_Sunset-Z.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Data\Textures\UI\Button.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\UI\Button_Selected.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\UI\Crosshair.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\UI\InputField.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\UI\options_background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Textures\UI\TextBox.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -99,6 +99,7 @@ namespace BuildPlate_Editor
             World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json";
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json"; // fancy
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0eb3037-94c1-4a85-b0d7-7b8375c6f1b1.json"; // redstone
+            //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0f771f0-a5d6-4acc-bd35-055e52548a20.json"; // igloo super fancy secret base
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\2cb8bda2-c49b-4ead-887f-593d37bc2784.json";
 #else
             Console.Write("Build plate to edit (.json): ");

@@ -59,8 +59,7 @@ namespace BuildPlate_Editor
         {
             JsonBuildPlate jsonBuildPlate = Util.JsonDeserialize<JsonBuildPlate>(File.ReadAllText(path));
             string model = Util.Base64Decode(jsonBuildPlate.model);
-            Console.WriteLine(model);
-            File.WriteAllText("E:\\plate.plate", model);
+
             return Util.JsonDeserialize<BuildPlate>(model);
         }
 
@@ -68,6 +67,7 @@ namespace BuildPlate_Editor
         {
             JsonBuildPlate jsonBuildPlate = Util.JsonDeserialize<JsonBuildPlate>(File.ReadAllText(originalPath));
             jsonBuildPlate.model = Util.Base64Encode(Util.JsonSerialize(bp));
+
             File.WriteAllText(path, Util.JsonSerialize(jsonBuildPlate));
         }
     }

@@ -199,11 +199,11 @@ namespace BuildPlate_Editor
                     int logType = data & 0b_0001;
                     switch (logType) {
                         case 0:
-                            return new [] { "log_acacia_top" } ;
+                            return new [] { "log_acacia", "log_acacia_top" } ;
                         case 1:
-                            return new [] { "log_big_oak_top" } ;
+                            return new [] { "log_big_oak", "log_big_oak_top" } ;
                         default:
-                            return new [] { "log_acacia_top" } ;
+                            return new [] { "log_acacia", "log_acacia_top" } ;
                     }
                 }
             },
@@ -230,7 +230,7 @@ namespace BuildPlate_Editor
                     }
                     string newName = name.Replace("_opaque", "");
                     // make green
-                     SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png");
+                     SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png", false);
                     byte darkest = 255;
                     for (int i = 0; i < db.Data.Length; i++) {
                         System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
@@ -262,7 +262,7 @@ namespace BuildPlate_Editor
                     }
                     string newName = name.Replace("_opaque", "");
                     // make green
-                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png");
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + name + ".png", false);
                     byte darkest = 255;
                     for (int i = 0; i < db.Data.Length; i++) {
                         System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
@@ -663,7 +663,7 @@ namespace BuildPlate_Editor
             { "vine", (int data) =>
                 {
                     // make green
-                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "vine.png");
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "vine.png", false);
                     for (int i = 0; i < db.Data.Length; i++) {
                         System.Drawing.Color c = System.Drawing.Color.FromArgb(db.Data[i]);
                         db.Data[i] = System.Drawing.Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
@@ -676,9 +676,9 @@ namespace BuildPlate_Editor
                 {
                     // side and dirt need to combined
                     TargaImage img = new TargaImage(textureBasePath + "grass_side.tga");
-                    SystemPlus.Utils.DirectBitmap side = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image);
+                    SystemPlus.Utils.DirectBitmap side = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image, false);
                     img.Dispose();
-                    SystemPlus.Utils.DirectBitmap dirt = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "dirt.png");
+                    SystemPlus.Utils.DirectBitmap dirt = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "dirt.png", false);
                     for (int i = 0; i < side.Data.Length; i++) {
                         System.Drawing.Color c = System.Drawing.Color.FromArgb(side.Data[i]);
                         if (c.A == 0)
@@ -693,7 +693,7 @@ namespace BuildPlate_Editor
             { "water", (int data) =>
                 {
                     // make green
-                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "water_still.png");
+                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "water_still.png", false);
                     SystemPlus.Utils.DirectBitmap water = new SystemPlus.Utils.DirectBitmap(16, 16);
 
                     water.Write(0, db.Data, 0, water.Data.Length);
@@ -782,7 +782,33 @@ namespace BuildPlate_Editor
                         default:
                             return new [] { "door_birch_lower" };
                     }
-                } // oak
+                }
+            },
+            { "spruce_door", (int data) =>
+                {
+                    int upper_block_bit = (data & 0b_1000) >> 3;
+                    switch (upper_block_bit) {
+                        case 0:
+                            return new [] { "door_spruce_lower" };
+                        case 1:
+                            return new [] { "door_spruce_upper" };
+                        default:
+                            return new [] { "door_spruce_lower" };
+                    }
+                }
+            },
+            { "dark_oak_door", (int data) =>
+                {
+                    int upper_block_bit = (data & 0b_1000) >> 3;
+                    switch (upper_block_bit) {
+                        case 0:
+                            return new [] { "door_dark_oak_lower" };
+                        case 1:
+                            return new [] { "door_dark_oak_upper" };
+                        default:
+                            return new [] { "door_dark_oak_lower" };
+                    }
+                }
             },
 
 
@@ -1697,7 +1723,6 @@ namespace BuildPlate_Editor
         private static string selectedBlock;
         private static bool cursorActive;
         private static bool showConstraints;
-        private static bool showCorrupt;
         private static int layers;
         private static int slices;
 
@@ -1788,10 +1813,12 @@ namespace BuildPlate_Editor
 
         public static SubChunk[] chunks;
 
+        private static bool finishedInit = false;
+
         public static void Init()
         {
             plate = BuildPlate.Load(targetFilePath);
-
+            
             string fileName = Path.GetFileNameWithoutExtension(targetFilePath); //get the filename with .plate
             int fileRev = 1; //used for saving so we dont save over a prior rev. useful when preparing multiple tests.
 
@@ -1802,7 +1829,6 @@ namespace BuildPlate_Editor
             selectedBlock = "portal";
             cursorActive = false;
             showConstraints = true;
-            showCorrupt = false;
             layers = 16;
             slices = 16;
 
@@ -1896,14 +1922,6 @@ namespace BuildPlate_Editor
                         renderers[block] = 0;
                 }
 
-                /*Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count - 1];
-                for (int i = 0; i < palette.Length; i++) {
-                    int[] _tex = textures[i].Cloned();
-                    for (int j = 0; j < _tex.Length; j++)
-                        _tex[j] = _tex[j] + 1; 
-                    palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i + 1].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
-                    Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, Texture: {palette[i].textures[0]}");
-                }*/
                 Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
                 for (int i = 0; i < palette.Length; i++) {
                     int[] _tex = textures[i].Cloned();
@@ -1917,14 +1935,28 @@ namespace BuildPlate_Editor
                 chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, 
                     plate.sub_chunks[subchunk].blocks.ForArray(i => (uint)i), renderers, palette, taid);
             }
+        }
+
+        public static void InitChunks()
+        {
             Console.WriteLine("Initializing chunks");
+            Parallel.For(0, chunks.Length, Util.DefaultParallelOptions, i => chunks[i].CreateMeshData());
+        }
+
+        public static void FinishInit()
+        {
+            // needs to run on main thread
             for (int i = 0; i < chunks.Length; i++)
-                chunks[i].Init();
+                chunks[i].InitMesh();
             Console.WriteLine("DONE");
+            finishedInit = true;
         }
 
         public static void Render(Shader s)
         {
+            if (!finishedInit)
+                FinishInit();
+
             cursorPos.X = MathPlus.FloorToInt(Camera.position.X);
             cursorPos.Y = MathPlus.FloorToInt(Camera.position.Y);
             cursorPos.Z = MathPlus.FloorToInt(Camera.position.Z);

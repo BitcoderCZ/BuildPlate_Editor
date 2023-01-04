@@ -35,7 +35,7 @@ namespace BuildPlate_Editor
             string fileName = "Skybox_" + skyboxName;
             string baseTexPath = Program.baseDir + "Data/Textures/";
             if (File.Exists(baseTexPath + fileName + ".png")) {
-                DirectBitmap db = DirectBitmap.Load(baseTexPath + fileName + ".png");
+                DirectBitmap db = DirectBitmap.Load(baseTexPath + fileName + ".png", false);
                 texId = Texture.GenerateCubeMap(db, Texture.CreateOffsets(db.Width, db.Height));
             }
             else if (Directory.Exists(baseTexPath + fileName)) {

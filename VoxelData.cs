@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace BuildPlate_Editor
 {
-    public static class VoxelData
-    {
-        public const int ChunkWidth = 16;
-        public const int ChunkHeight = 16;
-        public const int ChunkLayerLength = ChunkWidth * ChunkWidth;
+	public static class VoxelData
+	{
+		public const int ChunkWidth = 16;
+		public const int ChunkHeight = 16;
+		public const int ChunkLayerLength = ChunkWidth * ChunkWidth;
 		public const int WorldSizeInChunks = 5;
 
 		public static readonly Vector3[] voxelVerts = new Vector3[8] {
@@ -52,7 +52,7 @@ namespace BuildPlate_Editor
 		};
 
 		public static class Slab
-        {
+		{
 			public static readonly Vector3[] bottomVerts = new Vector3[8] {
 				new Vector3(0.0f, 0.0f, 0.0f),
 				new Vector3(1.0f, 0.0f, 0.0f),
@@ -137,7 +137,7 @@ namespace BuildPlate_Editor
 			};
 		}
 		public static class Stair
-        {
+		{
 			public static readonly Vector3[] zVerts = new Vector3[8] {
 				new Vector3(0.0f, 0.0f, 0.0f),
 				new Vector3(1.0f, 0.0f, 0.0f),
@@ -157,7 +157,7 @@ namespace BuildPlate_Editor
 				new Vector3(0.5f, 0.0f, 1.0f),
 				new Vector3(0.5f, 0.5f, 1.0f),
 				new Vector3(0.0f, 0.5f, 1.0f)
-			}; 
+			};
 			public static readonly Vector3[] smallVerts = new Vector3[8] {
 				new Vector3(0.0f, 0.0f, 0.0f),
 				new Vector3(0.5f, 0.0f, 0.0f),
@@ -188,7 +188,7 @@ namespace BuildPlate_Editor
 			};
 		}
 		public static class Repeater
-        {
+		{
 			public static readonly Vector3[] verts = new Vector3[8] {
 				new Vector3(0.0f, 0.0f, 0.0f),
 				new Vector3(1.0f, 0.0f, 0.0f),
@@ -207,7 +207,7 @@ namespace BuildPlate_Editor
 			};
 		}
 		public static class SkyBox
-        {
+		{
 			public static Vector3[] verts = new Vector3[] {
 				// positions          
 				new Vector3(-1.0f,  1.0f, -1.0f),
@@ -255,11 +255,11 @@ namespace BuildPlate_Editor
 			public static uint[] tris;
 
 			static SkyBox()
-            {
+			{
 				tris = new uint[verts.Length];
-                for (uint i = 0; i < tris.Length; i++)
+				for (uint i = 0; i < tris.Length; i++)
 					tris[i] = i;
-            }
+			}
 		}
 		public static class Vine // -z, -x, +z, +x
 		{
@@ -280,7 +280,7 @@ namespace BuildPlate_Editor
 			};
 		}
 		public static class Cactus
-        {
+		{
 			const float offset1 = 0.0625f;
 			const float offset2 = 1f - offset1;
 			public static readonly Vector3[] verts = new Vector3[] {
@@ -328,6 +328,70 @@ namespace BuildPlate_Editor
 				new Vector2(1.0f, 0.0f),
 				new Vector2(0.0f, 1.0f),
 				new Vector2(1.0f, 1.0f),
+			};
+		}
+		public static class Button
+        {
+			public const float Width = 0.375f;
+			public const float Heigth = 0.25f;
+			public const float Depth = 0.125f;
+			public const float WidthH = Width / 2f;
+			public const float HeigthH = Heigth / 2f;
+			public const float DepthH = Depth / 2f;
+
+			public static readonly Vector3[] verts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f),
+				new Vector3(Width, 0.0f, 0.0f),
+				new Vector3(Width, Heigth, 0.0f),
+				new Vector3(0.0f, Heigth, 0.0f),
+				new Vector3(0.0f, 0.0f, Depth),
+				new Vector3(Width, 0.0f, Depth),
+				new Vector3(Width, Heigth, Depth),
+				new Vector3(0.0f, Heigth, Depth)
+			};
+
+			public static readonly Vector2[,] uvs = new Vector2[,] {
+				{ // along z
+					new Vector2(0.0f, 0.0f),
+					new Vector2(0.0f, Heigth),
+					new Vector2(Width, 0.0f),
+					new Vector2(Width, Heigth) 
+				},
+				{ // along y
+					new Vector2(0.0f, 0.0f),
+					new Vector2(0.0f, Depth),
+					new Vector2(Width, 0.0f),
+					new Vector2(Width, Depth)
+				},
+				{ // along x
+					new Vector2(0.0f, 0.0f),
+					new Vector2(0.0f, Heigth),
+					new Vector2(Depth, 0.0f),
+					new Vector2(Depth, Heigth)
+				},
+			};
+		}
+		public static class Rail
+        {
+			public const float Y = 0.5f;
+			public const float DefaultHeight = 0.05f;
+			public static readonly Vector3[] verts = new Vector3[]
+			{
+				new Vector3(0.0f, Y, 0.0f), // 0
+				new Vector3(1.0f, Y, 0.0f), // 1
+				new Vector3(0.0f, Y, 1.0f), // 2
+				new Vector3(1.0f, Y, 1.0f), // 3
+			};
+			public static readonly Vector3[] vertsSlope = new Vector3[]
+			{
+				new Vector3(0.0f, 0.0f, 0.0f), // 0
+				new Vector3(1.0f, 0.0f, 0.0f), // 1
+				new Vector3(0.0f, 1.0f, 1.0f), // 2
+				new Vector3(1.0f, 1.0f, 1.0f), // 3
+			};
+			public static readonly int[,] tris = new int[2, 4] {
+				{0, 2, 1, 3}, // Top Face
+				{1, 3, 0, 2}, // Bottom Face
 			};
 		}
 	}

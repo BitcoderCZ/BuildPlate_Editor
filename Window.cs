@@ -214,14 +214,14 @@ namespace BuildPlate_Editor
             keyboardState = e.Keyboard;
 
             if (e.Key == Key.P) {
-                Vector3i pos = (Vector3i)World.cursorPos;
+                Vector3i pos = (Vector3i)(Camera.position);// - (Vector3.One / 2f));
                 World.GetBlockIndex(pos, out int sbi, out int bi);
-                uint chunkBlock = World.chunks[sbi].GetBlock(pos - World.chunks[sbi].pos * 16);
-                string blockName = World.chunks[sbi].palette[chunkBlock].name;
+                /*uint chunkBlock = World.chunks[sbi].GetBlock(pos - World.chunks[sbi].pos * 16);
+                string blockName = World.chunks[sbi].palette[chunkBlock].name;*/
 
                 Console.WriteLine($"Palette Id: {World.GetBlock(sbi, bi)}, Texture Id: {World.GetBlockPalette(sbi, bi).textures[0]}," +
-                                    $"Name: {World.GetBlockPalette(sbi, bi).name}");
-                Console.WriteLine($"ID: {bi}, SUB: {sbi}, Chunk Pos: {World.chunks[sbi].pos * 16}, Cursor pos: {pos}, Name: {blockName}");
+                                    $"Name: {World.GetBlockPalette(sbi, bi).name}, Data: {World.GetBlockPalette(sbi, bi).data}, Chunk Index: {sbi}, Block Index: {bi}");
+                //Console.WriteLine($"ID: {bi}, SUB: {sbi}, Chunk Pos: {World.chunks[sbi].pos * 16}, Cursor pos: {pos}, Name: {blockName}");
             }
 
             GUI.OnKeyDown(e.Key, e.Modifiers);

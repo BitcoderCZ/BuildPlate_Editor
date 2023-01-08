@@ -60,6 +60,7 @@ namespace BuildPlate_Editor
 
                 origz = z;
                 origy = y;
+                origx = x;
 
                 if (z == 0) {
                     z = 16;
@@ -69,6 +70,11 @@ namespace BuildPlate_Editor
                 if (y == -1)
                     y = 16;
 
+                if (Math.Abs(z) % 16 == 0 && y == 16) {
+                    y--;
+                    x--;
+                }
+
                 int renderer = renderers[currentBlock];
                 if (renderer > -1 && blocks[currentBlock] < palette.Length) { // don't render air
 #if DEBUG
@@ -77,26 +83,27 @@ namespace BuildPlate_Editor
                     World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
                         ref vertices, ref triangles);
 #else
-                    try {
-                        Palette pal = palette[blocks[currentBlock]];
-                        World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
-                            ref vertices, ref triangles);
-                    } catch (Exception ex) {
-                        uint b = blocks[currentBlock];
-                        string name = "Couldn't get";
-                        string data = "Couldn't get";
-                        if (b >= 0 && b < palette.Length) {
-                            name = palette[b].name;
-                            data = palette[b].data.ToString();
-                        }
-                        Util.Exit(EXITCODE.World_Render_Block, ex, $"Block ID: {blocks[currentBlock]}, SubChunk pos: {pos}, Renderer ID: {renderer}, " +
-                            $"Block Name: {name}, Block Data: {data}");
+                try {
+                    Palette pal = palette[blocks[currentBlock]];
+                    World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
+                        ref vertices, ref triangles);
+                } catch (Exception ex) {
+                    uint b = blocks[currentBlock];
+                    string name = "Couldn't get";
+                    string data = "Couldn't get";
+                    if (b >= 0 && b < palette.Length) {
+                        name = palette[b].name;
+                        data = palette[b].data.ToString();
                     }
+                    Util.Exit(EXITCODE.World_Render_Block, ex, $"Block ID: {blocks[currentBlock]}, SubChunk pos: {pos}, Renderer ID: {renderer}, " +
+                        $"Block Name: {name}, Block Data: {data}");
+                }
 #endif
                 }
 
                 z = origz;
                 y = origy;
+                x = origx;
             }
         }
 
@@ -197,6 +204,7 @@ namespace BuildPlate_Editor
 
                 origz = z;
                 origy = y;
+                origx = x;
 
                 if (z == 0) {
                     z = 16;
@@ -206,14 +214,19 @@ namespace BuildPlate_Editor
                 if (y == -1)
                     y = 16;
 
+                if (Math.Abs(z) % 16 == 0 && y == 16) {
+                    y--;
+                    x--;
+                }
+
                 if (new Vector3i(x, y, z) + offset == block) {
                     blockIndex = currentBlock;
                     return;
                 }
-                    
 
                 z = origz;
                 y = origy;
+                x = origx;
             }
 
             blockIndex = -1;

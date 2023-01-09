@@ -179,6 +179,23 @@ namespace BuildPlate_Editor
                     Camera.position.Y -= delta * 6f;
             }
 
+            if (GUI.Scene == 1 && wantToSave) {
+                GUI.SetScene(2);
+                UnlockMouse();
+                Thread saveThread = new Thread(() =>
+                {
+                    System.Windows.Forms.DialogResult res = System.Windows.Forms.MessageBox.Show("Are you sure you want to save", "Confirm save",
+                        System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Question,
+                        System.Windows.Forms.MessageBoxDefaultButton.Button1);
+                    if (res == System.Windows.Forms.DialogResult.Yes)
+                        World.Save();
+
+                    wantToSave = false;
+                    GUI.SetScene(1);
+                });
+                saveThread.Start();
+            }
+
             Console.Title = Camera.position.ToString();
 
             // Other keyboard
@@ -190,7 +207,7 @@ namespace BuildPlate_Editor
             GUI.Update(delta);
 
             float FPS = 1f / delta;
-            Title = $"BuildPlate_Editor FPS: {SystemPlus.MathPlus.Round(FPS, 2)}";
+            Title = $"BuildPlate_Editor FPS: {MathPlus.Round(FPS, 2)}";
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -202,13 +219,13 @@ namespace BuildPlate_Editor
             Camera.UpdateView(Width, Height);
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
-            if (GUI.Scene == 1)
+            if (GUI.Scene > 0)
                 World.Render(shader);
 
             colShader.Bind();
             colShader.UploadMat4("uProjection", ref Camera.projMatrix);
             colShader.UploadMat4("uView", ref Camera.viewMatrix);
-            if (GUI.Scene == 1)
+            if (GUI.Scene > 0)
                 outline.Render(colShader);
 
             skyboxShader.Bind();
@@ -216,7 +233,7 @@ namespace BuildPlate_Editor
             skyboxShader.UploadMat4("uView", ref Camera.viewMatrix);
             GL.Disable(EnableCap.CullFace);
             SkyBox.pos = Camera.position;
-            if (GUI.Scene == 1)
+            if (GUI.Scene > 0)
                 SkyBox.Render(skyboxShader);
             GL.Enable(EnableCap.CullFace);
 
@@ -227,10 +244,9 @@ namespace BuildPlate_Editor
             SwapBuffers();
         }
 
+        bool wantToSave = false;
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
-            keyboardState = e.Keyboard;
-
             if (e.Key == Key.P) {
                 Vector3i pos = (Vector3i)outline.Position;
                 World.GetBlockIndex(pos, out int sbi, out int bi);
@@ -250,7 +266,12 @@ namespace BuildPlate_Editor
                     else
                         World.BlockToPlace = input;
                 }
+            } else if (e.Key == Key.S && (e.Modifiers & KeyModifiers.Control) == KeyModifiers.Control) // save
+            {
+                wantToSave = true;
             }
+            else
+                keyboardState = e.Keyboard;
 
             GUI.OnKeyDown(e.Key, e.Modifiers);
         }

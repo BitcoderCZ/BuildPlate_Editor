@@ -1938,7 +1938,6 @@ namespace BuildPlate_Editor
 
         public static string BlockToPlace = "stone";
 
-        private static string fileName;
         public static string targetFilePath;
         private static int fileRev;
 
@@ -2284,6 +2283,24 @@ namespace BuildPlate_Editor
                 chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, 
                     plate.sub_chunks[subchunk].blocks.ForArray(i => (uint)i), renderers, palette, taid);
             }
+        }
+
+        public static void Save()
+        {
+            plate.sub_chunks.Clear();
+            for (int i = 0; i < chunks.Length; i++) {
+                BuildPlate.SubChunk sc = new BuildPlate.SubChunk() { position = chunks[i].pos, blocks = new List<int>(), 
+                    block_palette = new List<BuildPlate.PaletteBlock>() };
+
+                for (int j = 0; j < chunks[i].blocks.Length; j++)
+                    sc.blocks.Add((int)chunks[i].blocks[j]);
+                for (int j = 0; j < chunks[i].palette.Length; j++)
+                    sc.block_palette.Add(new BuildPlate.PaletteBlock() { name = chunks[i].palette[j].name, data = chunks[i].palette[j].data });
+
+                plate.sub_chunks.Add(sc);
+            }
+            BuildPlate.Save(plate, targetFilePath, targetFilePath);
+            Console.WriteLine($"Saved to {targetFilePath}");
         }
 
         public static void InitChunks()

@@ -50,7 +50,15 @@ namespace BuildPlate_Editor
             public int y;
             public int z;
 
+            public PositionInt(int _x, int _y, int _z)
+            {
+                x = _x;
+                y = _y;
+                z = _z;
+            }
+
             public static implicit operator Vector3i(PositionInt p) => new Vector3i(p.x, p.y, p.z);
+            public static implicit operator PositionInt(Vector3i p) => new PositionInt(p.X, p.Y, p.Z);
 
             public override string ToString() => $"X: {x}, Y: {y}, Z: {z}";
         }

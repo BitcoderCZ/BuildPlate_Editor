@@ -93,7 +93,8 @@ namespace BuildPlate_Editor.UI
                     UIImage.CreatePixel(new Vector2i(240, 260), new Vector2i(0, 40), Textures["Green"]), // loading bar
                     UItext.CreateCenter("Loading...", 0, 50, 5f, font),
                 },
-                new List<IGUIElement>() { },
+                new List<IGUIElement>() { }, // in game
+                new List<IGUIElement>() { }, // save
             };
             AddToScenes(font);
         }

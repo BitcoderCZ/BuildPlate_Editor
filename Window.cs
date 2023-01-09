@@ -240,7 +240,16 @@ namespace BuildPlate_Editor
                 else
                     Console.WriteLine("Couldn't get block index or sub chunk");
             } else if (e.Key == Key.E) {
-                World.BlockToPlace = BlockToPlace.TakeInput();
+                string input = BlockToPlace.TakeInput();
+                if (input != string.Empty) {
+                    if (!World.WillCreateValidTextures(input, 0)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\"{input}\" isn't valid block");
+                        Console.ResetColor();
+                    }
+                    else
+                        World.BlockToPlace = input;
+                }
             }
 
             GUI.OnKeyDown(e.Key, e.Modifiers);

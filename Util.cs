@@ -250,6 +250,9 @@ namespace BuildPlate_Editor
         public static Vector2 PixelToGL(Vector2i pos)
             => PixelToGL(pos.X, pos.Y);
 
+        public static char ToLower(this char c) => c.ToString().ToLower()[0];
+
+        // Set Foregroun
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetForegroundWindow(IntPtr hWnd);

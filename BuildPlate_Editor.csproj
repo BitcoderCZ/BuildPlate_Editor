@@ -164,6 +164,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="1051469223874011206.ico" />
+    <Content Include="Data\Blocks.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\Textures\Notfound.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

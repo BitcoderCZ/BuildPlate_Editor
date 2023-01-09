@@ -1936,7 +1936,7 @@ namespace BuildPlate_Editor
 
         public static string textureBasePath;
 
-        public static string BlockToPlace = string.Empty;
+        public static string BlockToPlace = "stone";
 
         private static string fileName;
         public static string targetFilePath;
@@ -1994,12 +1994,12 @@ namespace BuildPlate_Editor
 #if DEBUG
             taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
 #else
-                try {
-                    taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
-                } catch (Exception ex) {
-                    Util.Exit(EXITCODE.World_ReLoad_TextureArray, ex);
-                    return; // doesn't go here, just that vs is happy
-                }
+            try {
+                taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+            } catch (Exception ex) {
+                Util.Exit(EXITCODE.World_ReLoad_TextureArray, ex);
+                return; // doesn't go here, just that vs is happy
+            }
 #endif
 
             Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
@@ -2159,6 +2159,32 @@ namespace BuildPlate_Editor
                     chunks[i].Update();
                     return;
                 }
+        }
+
+        public static bool WillCreateValidTextures(string name, int data)
+        {
+            if (name.Contains(':'))
+                name = name.Split(':')[1];
+            string[] blockName = new string[] { name };
+
+            if (texReplacements.ContainsKey(blockName[0]))
+                blockName = texReplacements[blockName[0]].Cloned();
+
+            if (specialTextureLoad.ContainsKey(blockName[0]))
+                blockName = specialTextureLoad[blockName[0]].Invoke(data).Cloned();
+
+            for (int i = 0; i < blockName.Length; i++) {
+                if (blockName[i].Contains("."))
+                    blockName[i] = textureBasePath + blockName[i];
+                else
+                    blockName[i] = textureBasePath + blockName[i] + ".png";
+            }
+
+            for (int i = 0; i < blockName.Length; i++)
+                if (!File.Exists(blockName[i]))
+                    return false;
+
+            return true;
         }
 
         public static SubChunk[] chunks;

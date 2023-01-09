@@ -10,8 +10,9 @@ namespace BuildPlate_Editor
     {
         Normal = 0,
         OpenGL_LowVersion = 1,
-        World_Load_TextureArray = 2,
-        World_Render_Block = 3,
-        World_Unknown = 4,
+        World_Load_TextureArray = 4,
+        World_ReLoad_TextureArray = 5,
+        World_Render_Block = 10,
+        World_Unknown = 20,
     }
 }

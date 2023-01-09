@@ -79,13 +79,18 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockOutline.cs" />
+    <Compile Include="BlockToPlace.cs" />
     <Compile Include="BuildPlate.cs" />
     <Compile Include="BuildPlateDimension.cs" />
     <Compile Include="BuildPlateOffset.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="ColVertex.cs" />
     <Compile Include="EXITCODE.cs" />
     <Compile Include="Font.cs" />
     <Compile Include="GLGetVersion.cs" />
+    <Compile Include="Graphics\IRenderObject.cs" />
+    <Compile Include="Graphics\RenderObject.cs" />
     <Compile Include="JsonBuildPlate.cs" />
     <Compile Include="Maths\Vector2i.cs" />
     <Compile Include="Maths\Vector3i.cs" />
@@ -97,6 +102,7 @@
     <Compile Include="SubChunk.cs" />
     <Compile Include="TargaImage.cs" />
     <Compile Include="Texture.cs" />
+    <Compile Include="TexVertex.cs" />
     <Compile Include="UI\GUI.cs" />
     <Compile Include="UI\GUIElement.cs" />
     <Compile Include="UI\IGUIElement.cs" />
@@ -121,6 +127,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Data\Fonts\Minecraft.ifh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Shaders\colShader.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Shaders\colShader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Data\Shaders\skybox.frag">

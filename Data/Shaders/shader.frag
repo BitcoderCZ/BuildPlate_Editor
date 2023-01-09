@@ -10,7 +10,7 @@ void main()
 {
     vec4 col = texture(textures, fUv, 0);
     
-    if(col.a == 0.0)
+    if(col.a < 0.5)
     {
       discard;
     }

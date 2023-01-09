@@ -16,7 +16,7 @@ namespace BuildPlate_Editor
 
         public readonly uint[] blocks;
         public readonly int[] renderers;
-        public readonly Palette[] palette;
+        public Palette[] palette;
 
         public Vector3i pos;
 
@@ -24,7 +24,7 @@ namespace BuildPlate_Editor
         private int vbo;
         private int ebo;
 
-        public readonly int texId;
+        public int texId;
 
         public SubChunk(Vector3i _position, uint[] _blocks, int[] _renderers, Palette[] _palette, int _texId)
         {
@@ -53,7 +53,7 @@ namespace BuildPlate_Editor
             int origy;
             int origz;
 
-            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
+            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) { /*Maybe store lookup table. Maybe store lookup table*/
                 z++;
                 if (z == 16) { z = 0; y += 1; }
                 if (y == 16) { y = 0; x += 1; }
@@ -118,11 +118,11 @@ namespace BuildPlate_Editor
 
         public void CreateMesh()
         {
-            GL.NamedBufferData(ebo, triangles.Count * sizeof(uint), triangles.ToArray(), BufferUsageHint.DynamicDraw);
+            GL.NamedBufferData(ebo, triangles.Count * sizeof(uint), triangles.ToArray(), BufferUsageHint.StaticDraw);
             GL.VertexArrayElementBuffer(vao, ebo);
 
             int vertexBindingPoint = 0;
-            GL.NamedBufferData(vbo, vertices.Count * Vertex.Size, vertices.ToArray(), BufferUsageHint.DynamicDraw);
+            GL.NamedBufferData(vbo, vertices.Count * Vertex.Size, vertices.ToArray(), BufferUsageHint.StaticDraw);
             GL.VertexArrayVertexBuffer(vao, vertexBindingPoint, vbo, IntPtr.Zero, Vertex.Size);
 
             // pos
@@ -181,7 +181,6 @@ namespace BuildPlate_Editor
 
             return renderers[Z + (X * VoxelData.ChunkWidth) + (Y * VoxelData.ChunkLayerLength)];
         }
-
         public int GetRenderer(Vector3i pos)
             => GetRenderer(pos.X, pos.Y, pos.Z);
 
@@ -230,6 +229,122 @@ namespace BuildPlate_Editor
             }
 
             blockIndex = -1;
+        }
+
+        public int GetPaletteIndex(string name, int data, bool compareData)
+        {
+            if (!name.Contains(":"))
+                name = "minecraft:" + name;
+
+            for (int i = 0; i < palette.Length; i++)
+                if (palette[i].name == name && (!compareData || palette[i].data == data))
+                    return i;
+
+            return -1;
+        }
+        public Palette GetPaletteByName(string name)
+        {
+            if (!name.Contains(":"))
+                name = "minecraft:" + name;
+
+            for (int i = 0; i < palette.Length; i++)
+                if (palette[i].name == name)
+                    return palette[i];
+
+            return Palette.NULL;
+        }
+
+        public Vector3i IndexToPos(int i)
+        {
+            int x = 0;
+            int y = 0;
+            int z = 0;
+            int origx;
+            int origy;
+            int origz;
+
+            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
+                z++;
+                if (z == 16) { z = 0; y += 1; }
+                if (y == 16) { y = 0; x += 1; }
+
+                origz = z;
+                origy = y;
+                origx = x;
+
+                if (z == 0) {
+                    z = 16;
+                    y -= 1;
+                }
+
+                if (y == -1)
+                    y = 16;
+
+                if (Math.Abs(z) % 16 == 0 && y == 16) {
+                    y--;
+                    x--;
+                }
+
+                if (currentBlock == i)
+                    return new Vector3i(x, y, z);
+
+                z = origz;
+                y = origy;
+                x = origx;
+            }
+
+            return -Vector3i.One;
+        }
+
+        public void SetBlock(int blockIndex, int palletteIndex, int renderer, int data, bool update)
+        {
+            if (blockIndex < 0 || blockIndex >= blocks.Length)
+                return;
+            blocks[blockIndex] = (uint)palletteIndex;
+            renderers[blockIndex] = renderer;
+            Update();
+
+            Vector3i p = IndexToPos(blockIndex);
+
+            if (p.X < 2)
+                World.UpdateChunk(pos - Vector3i.UnitX);
+            else if (p.X > 13)
+                World.UpdateChunk(pos + Vector3i.UnitX);
+
+            if (p.Y < 2)
+                World.UpdateChunk(pos - Vector3i.UnitY);
+            else if (p.Y > 13)
+                World.UpdateChunk(pos + Vector3i.UnitY);
+
+            if (p.Z < 2)
+                World.UpdateChunk(pos - Vector3i.UnitZ);
+            else if (p.Z > 13)
+                World.UpdateChunk(pos + Vector3i.UnitZ);
+        }
+
+        public int AddNewPalette(string name, int data)
+        {
+            GL.DeleteTexture(texId);
+
+            for (int i = 0; i < World.plate.sub_chunks.Count; i++)
+                if (World.plate.sub_chunks[i].position == pos) {
+                    string mcn = name.Contains(':') ? name : "minecraft:" + name;
+                    World.plate.sub_chunks[i].block_palette.Add(new BuildPlate.PaletteBlock() { name = mcn, data = data });
+                    World.UpdateChunkPalette(i);
+                    return palette.Length - 1;
+                }
+
+            return -1;
+        }
+
+        public int NextPaletteIndex()
+        {
+            if (palette.Length > 0 && palette[palette.Length - 1].textures.Length > 0) {
+                Palette p = palette[palette.Length - 1];
+                return p.textures[p.textures.Length - 1];
+            }
+            else
+                return -1;
         }
     }
 }

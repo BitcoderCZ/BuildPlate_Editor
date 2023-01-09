@@ -4,10 +4,13 @@ using Newtonsoft.Json;
 using OpenTK;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SystemPlus;
 
@@ -246,5 +249,107 @@ namespace BuildPlate_Editor
             => new Vector2(((float)x / Width) * 2f - 1f, ((float)y / Height) * 2f - 1f);
         public static Vector2 PixelToGL(Vector2i pos)
             => PixelToGL(pos.X, pos.Y);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll", EntryPoint = "FindWindow", SetLastError = true)]
+        static extern IntPtr FindWindowByCaption(IntPtr zeroOnly, string lpWindowName);
+
+
+        public static void SetConsoleForeground()
+        {
+            string originalTitle = Console.Title;
+            string uniqueTitle = Guid.NewGuid().ToString();
+            Console.Title = uniqueTitle;
+            Thread.Sleep(20);
+            IntPtr handle = FindWindowByCaption(IntPtr.Zero, uniqueTitle);
+
+            if (handle == IntPtr.Zero) {
+                Console.WriteLine("Oops, cant find main window.");
+                return;
+            }
+            Console.Title = originalTitle;
+            int c = 0;
+            while (true) {
+                Thread.Sleep(20);
+                if (SetForegroundWindow(handle))
+                    return;
+                c++;
+                if (c > 100)
+                    return;
+            }
+        }
+        public static void SetOpenTKForeground()
+        {
+            string originalTitle = Program.Window.Title;
+            string uniqueTitle = Guid.NewGuid().ToString();
+            Program.Window.Title = uniqueTitle;
+            Thread.Sleep(20);
+            IntPtr handle = FindWindowByCaption(IntPtr.Zero, uniqueTitle);
+
+            if (handle == IntPtr.Zero) {
+                Console.WriteLine("Oops, cant find main window.");
+                return;
+            }
+            Program.Window.Title = originalTitle;
+            int c = 0;
+            while (true) {
+                Thread.Sleep(20);
+                if (SetForegroundWindow(handle))
+                    return;
+                c++;
+                if (c > 100)
+                    return;
+            }
+        }
+
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.Dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumChildWindows(IntPtr parentHandle, Win32Callback callback, IntPtr lParam);
+        public delegate bool Win32Callback(IntPtr hwnd, IntPtr lParam);
+
+        public static List<IntPtr> GetRootWindowsOfProcess(int pid)
+        {
+            List<IntPtr> rootWindows = GetChildWindows(IntPtr.Zero);
+            List<IntPtr> dsProcRootWindows = new List<IntPtr>();
+            foreach (IntPtr hWnd in rootWindows) {
+                uint lpdwProcessId;
+                GetWindowThreadProcessId(hWnd, out lpdwProcessId);
+                if (lpdwProcessId == pid)
+                    dsProcRootWindows.Add(hWnd);
+            }
+            return dsProcRootWindows;
+        }
+
+        public static List<IntPtr> GetChildWindows(IntPtr parent)
+        {
+            List<IntPtr> result = new List<IntPtr>();
+            GCHandle listHandle = GCHandle.Alloc(result);
+            try {
+                Win32Callback childProc = new Win32Callback(EnumWindow);
+                EnumChildWindows(parent, childProc, GCHandle.ToIntPtr(listHandle));
+            }
+            finally {
+                if (listHandle.IsAllocated)
+                    listHandle.Free();
+            }
+            return result;
+        }
+
+        private static bool EnumWindow(IntPtr handle, IntPtr pointer)
+        {
+            GCHandle gch = GCHandle.FromIntPtr(pointer);
+            List<IntPtr> list = gch.Target as List<IntPtr>;
+            if (list == null) {
+                throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
+            }
+            list.Add(handle);
+            //  You can modify this to check to see if you want to cancel the operation, then return a null here
+            return true;
+        }
     }
 }

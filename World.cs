@@ -18,7 +18,7 @@ namespace BuildPlate_Editor
         public static int number { get; private set; }
 
         // custom added reeds (was in .tga?)
-        private static readonly ReadOnlyDictionary<string, string[]> texReplacements = new ReadOnlyDictionary<string, string[]>(new Dictionary<string, string[]>()
+        public static readonly ReadOnlyDictionary<string, string[]> texReplacements = new ReadOnlyDictionary<string, string[]>(new Dictionary<string, string[]>()
         {
             { "brick_block", new []{ "brick" } },
             { "tnt", new []{ "tnt_side" } },
@@ -119,7 +119,7 @@ namespace BuildPlate_Editor
             { "wooden_button", new []{ "planks_oak" } },
         });
 
-        private static Dictionary<string, Func<int, string[]>> specialTextureLoad = new Dictionary<string, Func<int, string[]>>() // texture => { data, return final texture}
+        public static readonly Dictionary<string, Func<int, string[]>> specialTextureLoad = new Dictionary<string, Func<int, string[]>>() // texture => { data, return final texture}
         {
             { "planks", (int data) =>
                 {
@@ -1932,16 +1932,15 @@ namespace BuildPlate_Editor
             },
         };
 
-        private static BuildPlate plate;
+        public static BuildPlate plate;
 
         public static string textureBasePath;
 
+        public static string BlockToPlace = string.Empty;
 
         private static string fileName;
         public static string targetFilePath;
         private static int fileRev;
-
-        public static Vector3 cursorPos;
 
         //===editor data
         private static int maxSubChunk;
@@ -1950,6 +1949,70 @@ namespace BuildPlate_Editor
         private static bool showConstraints;
         private static int layers;
         private static int slices;
+
+        public static void UpdateChunkPalette(int subchunk)
+        {
+            Dictionary<int, string> blockNames = new Dictionary<int, string>();
+            List<string[]> __textures = new List<string[]>();
+            List<string> _textures = new List<string>();
+
+            //Create the textures
+            for (int paletteIndex = 0; paletteIndex < plate.sub_chunks[subchunk].block_palette.Count; paletteIndex++) {
+                BuildPlate.PaletteBlock paletteBlock = plate.sub_chunks[subchunk].block_palette[paletteIndex];
+                string[] blockName = new string[] { paletteBlock.name.Split(':')[1] };//gives us a clean texture name like dirt or grass_block
+
+                blockNames.Add(paletteIndex, blockName[0]);
+
+                if (texReplacements.ContainsKey(blockName[0]))
+                    blockName = texReplacements[blockName[0]].Cloned();
+
+                if (specialTextureLoad.ContainsKey(blockName[0]))
+                    blockName = specialTextureLoad[blockName[0]].Invoke(paletteBlock.data).Cloned();
+
+                for (int i = 0; i < blockName.Length; i++) {
+                    if (blockName[i].Contains("."))
+                        blockName[i] = textureBasePath + blockName[i];
+                    else
+                        blockName[i] = textureBasePath + blockName[i] + ".png";
+                    _textures.Add(blockName[i]);
+                }
+                __textures.Add(blockName); // we assign the texture to this subchunks part of the texture dict
+            }
+
+            int[][] textures = new int[__textures.Count][];
+
+            int c = 0;
+            for (int i = 0; i < textures.Length; i++) {
+                textures[i] = new int[__textures[i].Length];
+                for (int j = 0; j < textures[i].Length; j++) {
+                    textures[i][j] = c;
+                    c++;
+                }
+            }
+
+            int taid;
+#if DEBUG
+            taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+#else
+                try {
+                    taid = Texture.CreateTextureArray(_textures.ToArray(), TexFlip.Horizontal); // texture array id
+                } catch (Exception ex) {
+                    Util.Exit(EXITCODE.World_ReLoad_TextureArray, ex);
+                    return; // doesn't go here, just that vs is happy
+                }
+#endif
+
+            Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
+            for (int i = 0; i < palette.Length; i++) {
+                int[] _tex = textures[i].Cloned();
+                for (int j = 0; j < _tex.Length; j++)
+                    _tex[j] = _tex[j] + 1;
+                palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
+            }
+
+            chunks[subchunk].palette = palette;
+            chunks[subchunk].texId = taid;
+        }
 
         public static uint GetBlock(Vector3i pos)
            => GetBlock(pos.X, pos.Y, pos.Z);
@@ -1960,6 +2023,29 @@ namespace BuildPlate_Editor
         }
         public static uint GetBlock(int subChunkIndex, int blockIndex)
             => chunks[subChunkIndex].blocks[blockIndex];
+
+        public static void SetBlock(Vector3i pos, string blockName, int data = 0, bool compareData = false)
+           => SetBlock(pos.X, pos.Y, pos.Z, blockName, data, compareData);
+        public static void SetBlock(int x, int y, int z, string blockName, int data = 0, bool compareData = false)
+        {
+            GetBlockIndex(x, y, z, out int subChunkIndex, out int blockIndex);
+            if (subChunkIndex == -1 || blockIndex == -1)
+                return;
+            SetBlock(subChunkIndex, blockIndex, blockName, data, compareData);
+        }
+        public static void SetBlock(int subChunkIndex, int blockIndex, string blockName, int data = 0, bool compareData = false)
+        {
+            SubChunk chunk = chunks[subChunkIndex];
+
+            int pIndex = chunk.GetPaletteIndex(blockName, data, compareData);
+
+            if (pIndex != -1)
+                chunk.SetBlock(blockIndex, pIndex, GetRenderer(blockName), data, true);
+            else {
+                pIndex = chunk.AddNewPalette(blockName, data);
+                chunk.SetBlock(blockIndex, pIndex, GetRenderer(blockName), data, true);
+            }
+        }
 
         public static int GetBlockData(Vector3i pos)
            => GetBlockData(pos.X, pos.Y, pos.Z);
@@ -1998,6 +2084,41 @@ namespace BuildPlate_Editor
             else
                 return chunks[subChunk].renderers[block];
         }
+        public static int GetRenderer(string blockName)
+        {
+            if (blockRenderersLookUp.ContainsKey(blockName))
+                return blockRenderersLookUp[blockName];
+            else if (blockName.Contains("rail") && blockName != "rail") // powered, detector, activator
+                return 26;
+            else if (blockName.Contains("button"))
+                return 23;
+            else if (blockName.Contains("stripped")) // stripped log
+                return 18;
+            else if (blockName.Contains("log"))
+                return 17;
+            else if (blockName.Contains("pressure_plate"))
+                return 14;
+            else if (blockName.Contains("gate"))
+                return 12;
+            else if (blockName.Contains("pane"))
+                return 9;
+            else if (blockName.Contains("flower"))
+                return 8;
+            else if (blockName.Contains("trapdoor"))
+                return 4;
+            else if (blockName.Contains("door"))
+                return 24;
+            else if (blockName.Contains("stairs"))
+                return 2;
+            else if (blockName.Contains("slab"))
+                return 1;
+            else if (blockName == "air")
+                return -1;
+            else if (blockName.Contains("constraint"))
+                return -1;
+            else
+                return 0;
+        }
 
         public static void GetBlockIndex(Vector3i pos, out int subChunkIndex, out int blockIndex)
             => GetBlockIndex(pos.X, pos.Y, pos.Z, out subChunkIndex, out blockIndex);
@@ -2029,6 +2150,15 @@ namespace BuildPlate_Editor
                 return false;
             else
                 return RendererIsFullBlockLookUp[renderer];
+        }
+
+        public static void UpdateChunk(Vector3i pos)
+        {
+            for (int i = 0; i < chunks.Length; i++)
+                if (chunks[i].pos == pos) {
+                    chunks[i].Update();
+                    return;
+                }
         }
 
         public static SubChunk[] chunks;
@@ -2111,41 +2241,8 @@ namespace BuildPlate_Editor
 
                 int[] renderers = new int[plate.sub_chunks[subchunk].blocks.Count];
                 for (int block = 0; block < plate.sub_chunks[subchunk].blocks.Count; block++) {
-                    if (plate.sub_chunks[subchunk].blocks[block] >= plate.sub_chunks[subchunk].block_palette.Count)
-                        throw new Exception();
                     string blockName = blockNames[subchunk][plate.sub_chunks[subchunk].blocks[block]];
-                    if (blockRenderersLookUp.ContainsKey(blockName))
-                        renderers[block] = blockRenderersLookUp[blockName];
-                    else if (blockName.Contains("rail") && blockName != "rail") // powered, detector, activator
-                        renderers[block] = 26;
-                    else if (blockName.Contains("button"))
-                        renderers[block] = 23;
-                    else if (blockName.Contains("stripped")) // stripped log
-                        renderers[block] = 18;
-                    else if (blockName.Contains("log"))
-                        renderers[block] = 17;
-                    else if (blockName.Contains("pressure_plate"))
-                        renderers[block] = 14;
-                    else if (blockName.Contains("gate"))
-                        renderers[block] = 12;
-                    else if (blockName.Contains("pane"))
-                        renderers[block] = 9;
-                    else if (blockName.Contains("flower"))
-                        renderers[block] = 8;
-                    else if (blockName.Contains("trapdoor"))
-                        renderers[block] = 4;
-                    else if (blockName.Contains("door"))
-                        renderers[block] = 24;
-                    else if (blockName.Contains("stairs"))
-                        renderers[block] = 2;
-                    else if (blockName.Contains("slab"))
-                        renderers[block] = 1;
-                    else if (blockName == "air")
-                        renderers[block] = -1;
-                    else if (blockName.Contains("constraint"))
-                        renderers[block] = -1;
-                    else
-                        renderers[block] = 0;
+                    renderers[block] = GetRenderer(blockName);
                 }
 
                 Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
@@ -2156,11 +2253,6 @@ namespace BuildPlate_Editor
                     palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
                     Console.WriteLine($"[{i}] Block: {palette[i].name}, Data: {palette[i].data}, " +
                         $"Textures: {textures[i].Length}");
-                    if (palette[i].name.Contains("door")) {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"DOOR Name: {palette[i].name}, Data: {Convert.ToString(palette[i].data, 2)}");
-                        Console.ResetColor();
-                    }
                 }
 
                 chunks[subchunk] = new SubChunk(plate.sub_chunks[subchunk].position, 
@@ -2187,10 +2279,6 @@ namespace BuildPlate_Editor
         {
             if (!finishedInit)
                 FinishInit();
-
-            cursorPos.X = MathPlus.FloorToInt(Camera.position.X);
-            cursorPos.Y = MathPlus.FloorToInt(Camera.position.Y);
-            cursorPos.Z = MathPlus.FloorToInt(Camera.position.Z);
 
             for (int i = 0; i < chunks.Length; i++)
                 chunks[i].Render(s);

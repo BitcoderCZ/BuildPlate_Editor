@@ -16,14 +16,14 @@ namespace BuildPlate_Editor
 		public const int WorldSizeInChunks = 5;
 
 		public static readonly Vector3[] voxelVerts = new Vector3[8] {
-			new Vector3(0.0f, 0.0f, 0.0f),
-			new Vector3(1.0f, 0.0f, 0.0f),
-			new Vector3(1.0f, 1.0f, 0.0f),
-			new Vector3(0.0f, 1.0f, 0.0f),
-			new Vector3(0.0f, 0.0f, 1.0f),
-			new Vector3(1.0f, 0.0f, 1.0f),
-			new Vector3(1.0f, 1.0f, 1.0f),
-			new Vector3(0.0f, 1.0f, 1.0f)
+			new Vector3(0.0f, 0.0f, 0.0f), // 0
+			new Vector3(1.0f, 0.0f, 0.0f), // 1
+			new Vector3(1.0f, 1.0f, 0.0f), // 2
+			new Vector3(0.0f, 1.0f, 0.0f), // 3
+			new Vector3(0.0f, 0.0f, 1.0f), // 4
+			new Vector3(1.0f, 0.0f, 1.0f), // 5
+			new Vector3(1.0f, 1.0f, 1.0f), // 6
+			new Vector3(0.0f, 1.0f, 1.0f) //  7
 		};
 
 		public static readonly Vector3i[] faceChecks = new Vector3i[6] {
@@ -33,6 +33,23 @@ namespace BuildPlate_Editor
 			new Vector3i(0, -1, 0),
 			new Vector3i(-1, 0, 0),
 			new Vector3i(1, 0, 0)
+		};
+
+		public static readonly uint[] voxelLines = new uint[] {
+			0, 1,
+			0, 3,
+			0, 4,
+			6, 5,
+			6, 2,
+			6, 7,
+			2, 3,
+			2, 1,
+			5, 1,
+			5, 4,
+			2, 3,
+			2, 1,
+			7, 3,
+			7, 4,
 		};
 
 		public static readonly int[,] voxelTris = new int[6, 4] {

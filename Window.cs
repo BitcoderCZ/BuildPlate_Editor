@@ -16,6 +16,7 @@ using System.IO;
 using Font = BuildPlate_Editor.Font;
 using BuildPlate_Editor.UI;
 using System.Threading;
+using SystemPlus;
 
 namespace BuildPlate_Editor
 {
@@ -25,10 +26,13 @@ namespace BuildPlate_Editor
 
         Shader shader;
         Shader shader2;
+        Shader colShader;
         Shader skyboxShader;
         Shader uiShader;
 
         bool worldLoaded = false;
+
+        public static BlockOutline outline;
 
         // Mouse
         bool mouseLocked;
@@ -61,10 +65,14 @@ namespace BuildPlate_Editor
             shader.Compile("shader");
             shader2 = new Shader(); // not used by anything now
             shader2.Compile("shader2");
+            colShader = new Shader(); // used by block outline
+            colShader.Compile("colShader");
             skyboxShader = new Shader();
             skyboxShader.Compile("skybox");
             uiShader = new Shader(); // Used by UI
             uiShader.Compile("ui");
+
+            BlockToPlace.Init();
 
             // all UI stuff copyed from my minecraft repo
             // load font
@@ -91,6 +99,8 @@ namespace BuildPlate_Editor
             worldLoadThread.Start();
 
             SkyBox.Init("Cold_Sunset", Camera.position, 100f);
+
+            outline = new BlockOutline(1.1f, 4f, 3.0f, Color.Red);
             
             base.WindowBorder = WindowBorder.Fixed;
             base.WindowState = WindowState.Normal;
@@ -175,6 +185,8 @@ namespace BuildPlate_Editor
             if (keyboardState.IsKeyDown(Key.Escape))
                 UnlockMouse();
 
+            outline.Update();
+
             GUI.Update(delta);
 
             float FPS = 1f / delta;
@@ -192,6 +204,12 @@ namespace BuildPlate_Editor
             shader.UploadMat4("uView", ref Camera.viewMatrix);
             if (GUI.Scene == 1)
                 World.Render(shader);
+
+            colShader.Bind();
+            colShader.UploadMat4("uProjection", ref Camera.projMatrix);
+            colShader.UploadMat4("uView", ref Camera.viewMatrix);
+            if (GUI.Scene == 1)
+                outline.Render(colShader);
 
             skyboxShader.Bind();
             skyboxShader.UploadMat4("uProjection", ref Camera.projMatrix);
@@ -214,14 +232,15 @@ namespace BuildPlate_Editor
             keyboardState = e.Keyboard;
 
             if (e.Key == Key.P) {
-                Vector3i pos = (Vector3i)(Camera.position);// - (Vector3.One / 2f));
+                Vector3i pos = (Vector3i)outline.Position;
                 World.GetBlockIndex(pos, out int sbi, out int bi);
-                /*uint chunkBlock = World.chunks[sbi].GetBlock(pos - World.chunks[sbi].pos * 16);
-                string blockName = World.chunks[sbi].palette[chunkBlock].name;*/
-
-                Console.WriteLine($"Palette Id: {World.GetBlock(sbi, bi)}, Texture Id: {World.GetBlockPalette(sbi, bi).textures[0]}," +
+                if (sbi != -1 && bi != -1)
+                    Console.WriteLine($"Palette Id: {World.GetBlock(sbi, bi)}, Texture Id: {World.GetBlockPalette(sbi, bi).textures[0]}," +
                                     $"Name: {World.GetBlockPalette(sbi, bi).name}, Data: {World.GetBlockPalette(sbi, bi).data}, Chunk Index: {sbi}, Block Index: {bi}");
-                //Console.WriteLine($"ID: {bi}, SUB: {sbi}, Chunk Pos: {World.chunks[sbi].pos * 16}, Cursor pos: {pos}, Name: {blockName}");
+                else
+                    Console.WriteLine("Couldn't get block index or sub chunk");
+            } else if (e.Key == Key.E) {
+                World.BlockToPlace = BlockToPlace.TakeInput();
             }
 
             GUI.OnKeyDown(e.Key, e.Modifiers);
@@ -240,10 +259,28 @@ namespace BuildPlate_Editor
         {
             LockMouse();
             GUI.OnMouseDown(e.Button, e.Position);
+
+            if (GUI.Scene == 1) {
+                if (e.Button == MouseButton.Left)
+                    World.SetBlock((Vector3i)outline.Position, "air");
+                if (e.Button == MouseButton.Right)
+                    World.SetBlock((Vector3i)outline.Position, World.BlockToPlace);
+            }
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             GUI.OnMouseUp(e.Button, e.Position);
+        }
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            const float speed = 1.0f;
+            if (e.Delta > 0) {
+                outline.blocksFromCam += speed;
+            } else if (e.Delta < 0) {
+                outline.blocksFromCam -= speed;
+            }
+
+            outline.blocksFromCam = MathPlus.Clamp(outline.blocksFromCam, 1f, 20f);
         }
 
         // Mouse

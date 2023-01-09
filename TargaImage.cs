@@ -1467,7 +1467,7 @@ namespace BuildPlate_Editor
             else
             {
                 b = new Bitmap(ti.Image.Width, ti.Image.Height, ti.Image.PixelFormat);
-                using (Graphics g = Graphics.FromImage(b))
+                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(b))
                 {
                     g.DrawImage(ti.Image, 0, 0, new Rectangle(0, 0, b.Width, b.Height), GraphicsUnit.Pixel);
                 }

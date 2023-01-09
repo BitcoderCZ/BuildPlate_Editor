@@ -12,7 +12,7 @@ namespace BuildPlate_Editor
         public static Matrix4 viewMatrix;
         public static Matrix4 projMatrix;
         public static Vector3 position = new Vector3(5f, VoxelData.ChunkHeight + 5f, 5f);
-        public static Vector3 center = new Vector3(0f, 0f, 0f);
+        public static Vector3 target = new Vector3(0f, 0f, 0f);
         public static Vector3 up = new Vector3(0f, 1f, 0f);
         public static bool ortho = false;
         public static Vector3 Rotation;
@@ -42,9 +42,9 @@ namespace BuildPlate_Editor
             float y = (Rotation.Y * Util.PI) / 180f;
             Vector3 offset = new Vector3(0f, 0f, 1f);
             Matrix3 mat = Matrix3.CreateRotationX(x) * Matrix3.CreateRotationY(y);
-            center = position + (offset * mat);
+            target = position + (offset * mat);
             
-            viewMatrix = Matrix4.LookAt(position, center, up);
+            viewMatrix = Matrix4.LookAt(position, target, up);
 
             if (ortho) {
                 float projWidth = width;

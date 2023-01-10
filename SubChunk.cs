@@ -3,6 +3,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ namespace BuildPlate_Editor
     {
         List<Vertex> vertices = new List<Vertex>();
         List<uint> triangles = new List<uint>();
+
+        private ChunkOutline outline;
 
         public readonly uint[] blocks;
         public readonly int[] renderers;
@@ -33,19 +36,14 @@ namespace BuildPlate_Editor
             renderers = _renderers;
             palette = _palette;
             texId = _texId;
+            outline = new ChunkOutline(pos, VoxelData.ChunkWidth, 4f, Color.Yellow);
         }
 
-        public void Init()
-        {
-            CreateMeshData();
-            InitMesh();
-        }
+        public static Vector3i[] possitionLookUp;
 
-        public void CreateMeshData()
+        static SubChunk()
         {
-            vertices.Clear();
-            triangles.Clear();
-
+            possitionLookUp = new Vector3i[VoxelData.ChunkLayerLength * VoxelData.ChunkHeight];
             int x = 0;
             int y = 0;
             int z = 0;
@@ -53,7 +51,7 @@ namespace BuildPlate_Editor
             int origy;
             int origz;
 
-            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) { /*Maybe store lookup table. Maybe store lookup table*/
+            for (int currentBlock = 0; currentBlock < possitionLookUp.Length; currentBlock++) {
                 z++;
                 if (z == 16) { z = 0; y += 1; }
                 if (y == 16) { y = 0; x += 1; }
@@ -75,17 +73,38 @@ namespace BuildPlate_Editor
                     x--;
                 }
 
+                possitionLookUp[currentBlock] = new Vector3i(x, y, z);
+
+                z = origz;
+                y = origy;
+                x = origx;
+            }
+        }
+
+        public void Init()
+        {
+            CreateMeshData();
+            InitMesh();
+        }
+
+        public void CreateMeshData()
+        {
+            vertices.Clear();
+            triangles.Clear();
+
+            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
+
                 int renderer = renderers[currentBlock];
                 if (renderer > -1 && blocks[currentBlock] < palette.Length) { // don't render air
 #if DEBUG
                     uint blockId = blocks[currentBlock];
                     Palette pal = palette[blockId];
-                    World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
+                    World.blockRenderers[renderer](possitionLookUp[currentBlock], pos * 16, pal.textures, pal.data,
                         ref vertices, ref triangles);
 #else
                 try {
                     Palette pal = palette[blocks[currentBlock]];
-                    World.blockRenderers[renderer](new Vector3(x, y, z), pos * 16, pal.textures, pal.data,
+                    World.blockRenderers[renderer](possitionLookUp[currentBlock], pos * 16, pal.textures, pal.data,
                         ref vertices, ref triangles);
                 } catch (Exception ex) {
                     uint b = blocks[currentBlock];
@@ -100,10 +119,6 @@ namespace BuildPlate_Editor
                 }
 #endif
                 }
-
-                z = origz;
-                y = origy;
-                x = origx;
             }
         }
 
@@ -141,7 +156,7 @@ namespace BuildPlate_Editor
             CreateMesh();
         }
 
-        public void Render(Shader s)
+        public void Render(Shader s, Shader outlineShader)
         {
             Matrix4 transform = Matrix4.CreateTranslation(new Vector3(pos.X * VoxelData.ChunkWidth, pos.Y * VoxelData.ChunkHeight, pos.Z * VoxelData.ChunkWidth));
             
@@ -153,6 +168,9 @@ namespace BuildPlate_Editor
 
             GL.BindVertexArray(vao);
             GL.DrawElements(BeginMode.Triangles, triangles.Count, DrawElementsType.UnsignedInt, 0);
+
+            if (World.ShowChunkOutlines)
+                outline.Render(outlineShader);
         }
 
         public void SetBlock(int X, int Y, int Z, uint id)
@@ -188,44 +206,13 @@ namespace BuildPlate_Editor
         {
             Vector3i block = new Vector3i(bx, by, bz);
 
-            int x = 0;
-            int y = 0;
-            int z = 0;
-            int origx;
-            int origy;
-            int origz;
             Vector3i offset = new Vector3i(pos.X * VoxelData.ChunkWidth, pos.Y * VoxelData.ChunkHeight, pos.Z * VoxelData.ChunkWidth);
 
             for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
-                z++;
-                if (z == 16) { z = 0; y += 1; }
-                if (y == 16) { y = 0; x += 1; }
-
-                origz = z;
-                origy = y;
-                origx = x;
-
-                if (z == 0) {
-                    z = 16;
-                    y -= 1;
-                }
-
-                if (y == -1)
-                    y = 16;
-
-                if (Math.Abs(z) % 16 == 0 && y == 16) {
-                    y--;
-                    x--;
-                }
-
-                if (new Vector3i(x, y, z) + offset == block) {
+                if (possitionLookUp[currentBlock] + offset == block) {
                     blockIndex = currentBlock;
                     return;
                 }
-
-                z = origz;
-                y = origy;
-                x = origx;
             }
 
             blockIndex = -1;
@@ -254,48 +241,6 @@ namespace BuildPlate_Editor
             return Palette.NULL;
         }
 
-        public Vector3i IndexToPos(int i)
-        {
-            int x = 0;
-            int y = 0;
-            int z = 0;
-            int origx;
-            int origy;
-            int origz;
-
-            for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
-                z++;
-                if (z == 16) { z = 0; y += 1; }
-                if (y == 16) { y = 0; x += 1; }
-
-                origz = z;
-                origy = y;
-                origx = x;
-
-                if (z == 0) {
-                    z = 16;
-                    y -= 1;
-                }
-
-                if (y == -1)
-                    y = 16;
-
-                if (Math.Abs(z) % 16 == 0 && y == 16) {
-                    y--;
-                    x--;
-                }
-
-                if (currentBlock == i)
-                    return new Vector3i(x, y, z);
-
-                z = origz;
-                y = origy;
-                x = origx;
-            }
-
-            return -Vector3i.One;
-        }
-
         public void SetBlock(int blockIndex, int palletteIndex, int renderer, int data, bool update)
         {
             if (blockIndex < 0 || blockIndex >= blocks.Length)
@@ -304,7 +249,7 @@ namespace BuildPlate_Editor
             renderers[blockIndex] = renderer;
             Update();
 
-            Vector3i p = IndexToPos(blockIndex);
+            Vector3i p = possitionLookUp[blockIndex];
 
             if (p.X < 2)
                 World.UpdateChunk(pos - Vector3i.UnitX);
@@ -326,11 +271,12 @@ namespace BuildPlate_Editor
         {
             GL.DeleteTexture(texId);
 
-            for (int i = 0; i < World.plate.sub_chunks.Count; i++)
-                if (World.plate.sub_chunks[i].position == pos) {
+            for (int i = 0; i < World.chunks.Length; i++)
+                if (World.chunks[i].pos == pos) {
                     string mcn = name.Contains(':') ? name : "minecraft:" + name;
-                    World.plate.sub_chunks[i].block_palette.Add(new BuildPlate.PaletteBlock() { name = mcn, data = data });
-                    World.UpdateChunkPalette(i);
+                    Array.Resize(ref palette, palette.Length + 1);
+                    palette[palette.Length - 1] = new Palette(mcn, data, -1);
+                    World.ReloadPaletteTextures(i);
                     return palette.Length - 1;
                 }
 
@@ -345,6 +291,111 @@ namespace BuildPlate_Editor
             }
             else
                 return -1;
+        }
+
+        public static bool WouldBeBlockInChunk(Vector3i _chunkPos, Vector3i blockPos)
+        {
+            Vector3i chunkPos = _chunkPos * 16;
+            for (int i = 0; i < possitionLookUp.Length; i++)
+                if (possitionLookUp[i] + chunkPos == blockPos)
+                    return true;
+            return false;
+        }
+
+        public static Vector3i GetToWhereCreateChunk(Vector3i shouldBeThere, Vector3i blockPos)
+        {
+            if (WouldBeBlockInChunk(shouldBeThere, blockPos))
+                return shouldBeThere;
+
+            for (int i = 0; i < VoxelData.faceChecks.Length; i++) {
+                Vector3i offset = VoxelData.faceChecks[i];
+                if (WouldBeBlockInChunk(shouldBeThere + offset, blockPos))
+                    return shouldBeThere + offset;
+            }
+            return shouldBeThere;
+        }
+
+        class ChunkOutline
+        {
+            public Vector3 Position { get; set; }
+
+            public ColVertex[] vertices;
+            public uint[] triangles;
+            public bool Active { get; set; }
+
+
+            protected int vao;
+            protected int vbo;
+            protected int ebo;
+
+            public float lineWidth;
+
+            public ChunkOutline(Vector3i pos, float size, float _lineWidth, Color _c)
+            {
+                Vector4 c = new Vector4(
+                        (float)_c.R / 255f,
+                        (float)_c.G / 255f,
+                        (float)_c.B / 255f,
+                        (float)_c.A / 255f
+                    );
+                Vector3 half = Vector3.One / 2f;
+
+                vertices = new ColVertex[VoxelData.voxelVerts.Length];
+                for (int i = 0; i < vertices.Length; i++)
+                    vertices[i] = new ColVertex(VoxelData.voxelVerts[i] * size, c);
+
+                triangles = VoxelData.voxelLines;
+
+                lineWidth = _lineWidth;
+
+                Position = pos * size - new Vector3(0.5f, 0.5f, 0.5f);
+
+                InitMesh();
+
+                Active = true;
+            }
+
+            private void InitMesh()
+            {
+                GL.CreateVertexArrays(1, out vao);
+                GL.BindVertexArray(vao);
+                GL.CreateBuffers(1, out ebo);
+                GL.CreateBuffers(1, out vbo);
+                UploadMesh();
+            }
+
+            public void UploadMesh()
+            {
+                GL.NamedBufferData(ebo, triangles.Length * sizeof(uint), triangles, BufferUsageHint.StaticDraw);
+                GL.VertexArrayElementBuffer(vao, ebo);
+
+                int vertexBindingPoint = 0;
+                GL.NamedBufferData(vbo, vertices.Length * ColVertex.Size, vertices, BufferUsageHint.StaticDraw);
+                GL.VertexArrayVertexBuffer(vao, vertexBindingPoint, vbo, IntPtr.Zero, ColVertex.Size);
+
+                // pos
+                GL.VertexArrayAttribFormat(vao, 0, 3, VertexAttribType.Float, false, 0);
+                GL.VertexArrayAttribBinding(vao, 0, vertexBindingPoint);
+                GL.EnableVertexArrayAttrib(vao, 0);
+                // color
+                GL.VertexArrayAttribFormat(vao, 1, 4, VertexAttribType.Float, false, 3 * sizeof(float));
+                GL.VertexArrayAttribBinding(vao, 1, vertexBindingPoint);
+                GL.EnableVertexArrayAttrib(vao, 1);
+            }
+
+            public void Render(Shader s)
+            {
+                if (!Active)
+                    return;
+
+                s.Bind();
+                Matrix4 transform = Matrix4.CreateTranslation(Position);
+                s.UploadMat4("uTransform", ref transform);
+
+                GL.BindVertexArray(vao);
+                GL.LineWidth(lineWidth);
+                GL.DrawElements(BeginMode.Lines, triangles.Length, DrawElementsType.UnsignedInt, 0);
+            }
         }
     }
 }

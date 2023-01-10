@@ -215,16 +215,18 @@ namespace BuildPlate_Editor
             GL.ClearColor(Color.FromArgb(92, 157, 255));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+            colShader.Bind();
+            colShader.UploadMat4("uProjection", ref Camera.projMatrix);
+            colShader.UploadMat4("uView", ref Camera.viewMatrix);
+
             shader.Bind();
             Camera.UpdateView(Width, Height);
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
             if (GUI.Scene > 0)
-                World.Render(shader);
+                World.Render(shader, colShader);
 
             colShader.Bind();
-            colShader.UploadMat4("uProjection", ref Camera.projMatrix);
-            colShader.UploadMat4("uView", ref Camera.viewMatrix);
             if (GUI.Scene > 0)
                 outline.Render(colShader);
 
@@ -255,7 +257,8 @@ namespace BuildPlate_Editor
                                     $"Name: {World.GetBlockPalette(sbi, bi).name}, Data: {World.GetBlockPalette(sbi, bi).data}, Chunk Index: {sbi}, Block Index: {bi}");
                 else
                     Console.WriteLine("Couldn't get block index or sub chunk");
-            } else if (e.Key == Key.E) {
+            }
+            else if (e.Key == Key.E) {
                 string input = BlockToPlace.TakeInput();
                 if (input != string.Empty) {
                     if (!World.WillCreateValidTextures(input, 0)) {
@@ -266,10 +269,13 @@ namespace BuildPlate_Editor
                     else
                         World.BlockToPlace = input;
                 }
-            } else if (e.Key == Key.S && (e.Modifiers & KeyModifiers.Control) == KeyModifiers.Control) // save
-            {
+            }
+            else if (e.Key == Key.S && (e.Modifiers & KeyModifiers.Control) == KeyModifiers.Control) // save
+          {
                 wantToSave = true;
             }
+            else if (e.Key == Key.C)
+                World.ShowChunkOutlines = !World.ShowChunkOutlines;
             else
                 keyboardState = e.Keyboard;
 

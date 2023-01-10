@@ -1540,7 +1540,6 @@ namespace BuildPlate_Editor
                         tris.Add(firstVertIndex + 3);
                     }
 
-                    return;
                     offset = -Vector3.One / 2f;
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)verts.Count;
@@ -1938,6 +1937,8 @@ namespace BuildPlate_Editor
 
         public static string BlockToPlace = "stone";
 
+        public static bool ShowChunkOutlines = false;
+
         public static string targetFilePath;
         private static int fileRev;
 
@@ -1949,15 +1950,15 @@ namespace BuildPlate_Editor
         private static int layers;
         private static int slices;
 
-        public static void UpdateChunkPalette(int subchunk)
+        public static void ReloadPaletteTextures(int subchunk)
         {
             Dictionary<int, string> blockNames = new Dictionary<int, string>();
             List<string[]> __textures = new List<string[]>();
             List<string> _textures = new List<string>();
 
             //Create the textures
-            for (int paletteIndex = 0; paletteIndex < plate.sub_chunks[subchunk].block_palette.Count; paletteIndex++) {
-                BuildPlate.PaletteBlock paletteBlock = plate.sub_chunks[subchunk].block_palette[paletteIndex];
+            for (int paletteIndex = 0; paletteIndex < chunks[subchunk].palette.Length; paletteIndex++) {
+                Palette paletteBlock = chunks[subchunk].palette[paletteIndex];
                 string[] blockName = new string[] { paletteBlock.name.Split(':')[1] };//gives us a clean texture name like dirt or grass_block
 
                 blockNames.Add(paletteIndex, blockName[0]);
@@ -2001,12 +2002,12 @@ namespace BuildPlate_Editor
             }
 #endif
 
-            Palette[] palette = new Palette[plate.sub_chunks[subchunk].block_palette.Count];
+            Palette[] palette = new Palette[chunks[subchunk].palette.Length];
             for (int i = 0; i < palette.Length; i++) {
                 int[] _tex = textures[i].Cloned();
                 for (int j = 0; j < _tex.Length; j++)
                     _tex[j] = _tex[j] + 1;
-                palette[i] = new Palette(plate.sub_chunks[subchunk].block_palette[i].name, plate.sub_chunks[subchunk].block_palette[i].data, _tex);
+                palette[i] = new Palette(chunks[subchunk].palette[i].name, chunks[subchunk].palette[i].data, _tex);
             }
 
             chunks[subchunk].palette = palette;
@@ -2028,8 +2029,46 @@ namespace BuildPlate_Editor
         public static void SetBlock(int x, int y, int z, string blockName, int data = 0, bool compareData = false)
         {
             GetBlockIndex(x, y, z, out int subChunkIndex, out int blockIndex);
-            if (subChunkIndex == -1 || blockIndex == -1)
-                return;
+            if (subChunkIndex == -1 || blockIndex == -1) { // out of bounds, create new chunk
+                float _x = Math.Abs(x) % 16f;
+                float _y = Math.Abs(y) % 16f;
+                float _z = Math.Abs(z) % 16f;
+                int __x = 0;
+                int __y = 0;
+                int __z = 0;
+                if ((_x > 0 || x > 0) && _x < 2)
+                    __x += x >= 0 ? 2 : -2;
+                else if (_x > 14)
+                    __x -= x >= 0 ? 2 : -2;
+                if ((_y > 0 || y > 0) && _y < 2)
+                    __y += y >= 0 ? 2 : -2;
+                else if (_y > 14)
+                    __y -= y >= 0 ? 2 : -2;
+                if ((_z > 0 || z > 0) && _z < 2)
+                    __z += z >= 0 ? 2 : -2;
+                else if (_z > 14)
+                    __z -= z >= 0 ? 2 : -2;
+
+                if (_x == 0 && x < 0)
+                    __x--;
+                if (_y == 0 && y < 0)
+                    __y--;
+                if (_z == 0 && z < 0)
+                    __z--;
+
+                Vector3 _pos = new Vector3(x + __x, y + __y, z + __z) / 16f;
+                Vector3i pos = new Vector3i((int)(_pos.X >= 0 ? _pos.X : -(MathPlus.CeilToInt(-_pos.X))), (int)(_pos.Y >= 0 ? _pos.Y : -(MathPlus.CeilToInt(-_pos.Y))), 
+                    (int)(_pos.Z >= 0 ? _pos.Z : -(MathPlus.CeilToInt(-_pos.Z))));
+                pos = SubChunk.GetToWhereCreateChunk(pos, new Vector3i(x, y, z));
+                AddChunk(pos);
+                Console.WriteLine($"Added chunk at pos {pos}, chunk count: {chunks.Length}");
+                GetBlockIndex(x, y, z, out subChunkIndex, out blockIndex);
+                if (subChunkIndex == -1 || blockIndex == -1) {
+                    Console.WriteLine($"Failed to place block at {new Vector3i(x, y, z)}, Name: {blockName}, Data: {data}");
+                    return;
+                }
+            }
+
             SetBlock(subChunkIndex, blockIndex, blockName, data, compareData);
         }
         public static void SetBlock(int subChunkIndex, int blockIndex, string blockName, int data = 0, bool compareData = false)
@@ -2123,8 +2162,8 @@ namespace BuildPlate_Editor
             => GetBlockIndex(pos.X, pos.Y, pos.Z, out subChunkIndex, out blockIndex);
         public static void GetBlockIndex(int x, int y, int z, out int subChunkIndex, out int blockIndex)
         {
-            for (int i = 0; i < plate.sub_chunks.Count; i++) {
-                Vector3i pos = (Vector3i)plate.sub_chunks[i].position * 16;
+            for (int i = 0; i < chunks.Length; i++) {
+                Vector3i pos = (Vector3i)chunks[i].pos * 16;
                 Vector3i posMax = pos + new Vector3i(16, 16, 16);
                 if (x < pos.X || x > posMax.X ||
                    y < pos.Y || y > posMax.Y ||
@@ -2303,6 +2342,22 @@ namespace BuildPlate_Editor
             Console.WriteLine($"Saved to {targetFilePath}");
         }
 
+        public static void AddChunk(Vector3i pos)
+        {
+            Array.Resize(ref chunks, chunks.Length + 1);
+            uint[] block = new uint[VoxelData.ChunkLayerLength * VoxelData.ChunkHeight];
+            for (int i = 0; i < block.Length; i++)
+                block[i] = 0;
+            int[] renderers = new int[VoxelData.ChunkLayerLength * VoxelData.ChunkHeight];
+            for (int i = 0; i < renderers.Length; i++)
+                renderers[i] = -1;
+            Palette palette = new Palette("minecraft:air", 0, 0);
+
+            SubChunk chunk = new SubChunk(pos, block, renderers, new Palette[] { palette }, -1);
+            chunk.Init();
+            chunks[chunks.Length - 1] = chunk;
+        }
+
         public static void InitChunks()
         {
             Console.WriteLine("Initializing chunks");
@@ -2318,13 +2373,13 @@ namespace BuildPlate_Editor
             finishedInit = true;
         }
 
-        public static void Render(Shader s)
+        public static void Render(Shader s, Shader outlineShader)
         {
             if (!finishedInit)
                 FinishInit();
 
             for (int i = 0; i < chunks.Length; i++)
-                chunks[i].Render(s);
+                chunks[i].Render(s, outlineShader);
         }
     }
 }

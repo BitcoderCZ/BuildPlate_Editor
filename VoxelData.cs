@@ -13,7 +13,6 @@ namespace BuildPlate_Editor
 		public const int ChunkWidth = 16;
 		public const int ChunkHeight = 16;
 		public const int ChunkLayerLength = ChunkWidth * ChunkWidth;
-		public const int WorldSizeInChunks = 5;
 
 		public static readonly Vector3[] voxelVerts = new Vector3[8] {
 			new Vector3(0.0f, 0.0f, 0.0f), // 0

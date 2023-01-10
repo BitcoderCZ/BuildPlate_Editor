@@ -64,7 +64,7 @@ namespace BuildPlate_Editor
                 float near = 0.001f;
                 float far = 100000f;
                 float aspect = width / height;
-                 projMatrix = Matrix4.CreatePerspectiveFieldOfView(DegToRad(fov), aspect, near, far);
+                projMatrix = Matrix4.CreatePerspectiveFieldOfView(DegToRad(fov), aspect, near, far);
             }
         }
 

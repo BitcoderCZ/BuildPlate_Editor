@@ -93,8 +93,14 @@ namespace BuildPlate_Editor.UI
                     UIImage.CreatePixel(new Vector2i(240, 260), new Vector2i(0, 40), Textures["Green"]), // loading bar
                     UItext.CreateCenter("Loading...", 0, 50, 5f, font),
                 },
-                new List<IGUIElement>() { }, // in game
+                new List<IGUIElement>() {
+                    UIImage.CreateCenter(0.06f, 0.06f, Textures["Crosshair"], true),
+                }, // in game
                 new List<IGUIElement>() { }, // save
+                new List<IGUIElement>() {
+                    new UIImage(-1f, -1f, 2f, 2f, Textures["BlackTransparent"], false),
+                    UItext.CreateCenter("Input to Console", 0, 350, 3f, font),
+                }, // select block in console
             };
             AddToScenes(font);
         }

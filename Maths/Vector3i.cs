@@ -13,6 +13,7 @@ namespace BuildPlate_Editor.Maths
     {
         public static readonly Vector3i Zero = new Vector3i(0, 0, 0);
         public static readonly Vector3i One = new Vector3i(1, 1, 1);
+        public static readonly Vector3i Invalid = new Vector3i(int.MaxValue, int.MaxValue, int.MaxValue);
         public static readonly Vector3i UnitX = new Vector3i(1, 0, 0);
         public static readonly Vector3i UnitY = new Vector3i(0, 1, 0);
         public static readonly Vector3i UnitZ = new Vector3i(0, 0, 1);

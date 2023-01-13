@@ -204,12 +204,14 @@ namespace BuildPlate_Editor
 
         public void GetBlockIndex(int bx, int by, int bz, out int blockIndex)
         {
-            Vector3i block = new Vector3i(bx, by, bz);
-
             Vector3i offset = new Vector3i(pos.X * VoxelData.ChunkWidth, pos.Y * VoxelData.ChunkHeight, pos.Z * VoxelData.ChunkWidth);
 
+            Vector3i block = new Vector3i(bx, by, bz);
+
+            block -= offset;
+
             for (int currentBlock = 0; currentBlock < blocks.Length; currentBlock++) {
-                if (possitionLookUp[currentBlock] + offset == block) {
+                if (possitionLookUp[currentBlock] == block) {
                     blockIndex = currentBlock;
                     return;
                 }
@@ -348,7 +350,7 @@ namespace BuildPlate_Editor
 
                 lineWidth = _lineWidth;
 
-                Position = pos * size - new Vector3(0.5f, 0.5f, 0.5f);
+                Position = pos * size + new Vector3(0.5f, 0.5f, 0.5f);
 
                 InitMesh();
 

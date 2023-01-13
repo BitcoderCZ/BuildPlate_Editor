@@ -177,6 +177,8 @@ namespace BuildPlate_Editor
                     Camera.position.Y += delta * 6f;
                 else if (keyboardState.IsKeyDown(Key.ShiftLeft))
                     Camera.position.Y -= delta * 6f;
+
+                Camera.UpdateView(Width, Height);
             }
 
             if (GUI.Scene == 1 && wantToSave) {
@@ -202,7 +204,8 @@ namespace BuildPlate_Editor
             if (keyboardState.IsKeyDown(Key.Escape))
                 UnlockMouse();
 
-            outline.Update();
+            //if (!outline.Raycast)
+                outline.Update();
 
             GUI.Update(delta);
 
@@ -220,7 +223,6 @@ namespace BuildPlate_Editor
             colShader.UploadMat4("uView", ref Camera.viewMatrix);
 
             shader.Bind();
-            Camera.UpdateView(Width, Height);
             shader.UploadMat4("uProjection", ref Camera.projMatrix);
             shader.UploadMat4("uView", ref Camera.viewMatrix);
             if (GUI.Scene > 0)
@@ -244,9 +246,30 @@ namespace BuildPlate_Editor
             GL.DepthMask(true);
 
             SwapBuffers();
+
+            LateUpdate();
+        }
+
+        private void LateUpdate()
+        {
+            if (wantToTakeInput) {
+                string input = BlockToPlace.TakeInput();
+                if (input != string.Empty) {
+                    if (!World.WillCreateValidTextures(input, 0)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\"{input}\" isn't valid block");
+                        Console.ResetColor();
+                    }
+                    else
+                        World.BlockToPlace = input;
+                }
+                GUI.SetScene(0);
+                wantToTakeInput = false;
+            }
         }
 
         bool wantToSave = false;
+        bool wantToTakeInput = false;
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             if (e.Key == Key.P) {
@@ -259,23 +282,15 @@ namespace BuildPlate_Editor
                     Console.WriteLine("Couldn't get block index or sub chunk");
             }
             else if (e.Key == Key.E) {
-                string input = BlockToPlace.TakeInput();
-                if (input != string.Empty) {
-                    if (!World.WillCreateValidTextures(input, 0)) {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"\"{input}\" isn't valid block");
-                        Console.ResetColor();
-                    }
-                    else
-                        World.BlockToPlace = input;
-                }
+                GUI.SetScene(3);
+                wantToTakeInput = true;
             }
             else if (e.Key == Key.S && (e.Modifiers & KeyModifiers.Control) == KeyModifiers.Control) // save
-          {
                 wantToSave = true;
-            }
             else if (e.Key == Key.C)
                 World.ShowChunkOutlines = !World.ShowChunkOutlines;
+            else if (e.Key == Key.M)
+                outline.Raycast = !outline.Raycast;
             else
                 keyboardState = e.Keyboard;
 
@@ -297,10 +312,12 @@ namespace BuildPlate_Editor
             GUI.OnMouseDown(e.Button, e.Position);
 
             if (GUI.Scene == 1) {
+                if (outline.Raycast)
+                    outline.Update();
                 if (e.Button == MouseButton.Left)
-                    World.SetBlock((Vector3i)outline.Position, "air");
+                    World.SetBlock((Vector3i)outline.raycastResult.HitPos, "air");
                 if (e.Button == MouseButton.Right)
-                    World.SetBlock((Vector3i)outline.Position, World.BlockToPlace);
+                    World.SetBlock((Vector3i)outline.raycastResult.LastPos, World.BlockToPlace);
             }
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)

@@ -27,6 +27,9 @@ namespace BuildPlate_Editor
         public float lineWidth;
         public float blocksFromCam;
 
+        public bool Raycast = false;
+        public RaycastResult raycastResult;
+
         public BlockOutline(float size, float _lineWidth, float _blocksFromCam, Color _c)
         {
             Vector4 c = new Vector4(
@@ -82,12 +85,16 @@ namespace BuildPlate_Editor
         public void Update()
         {
             Vector3 dir = Camera.target - Camera.position; // is normalized
-            Position = (Vector3i)((Camera.position + dir * blocksFromCam) + Vector3.One / 2f);
+            if (Raycast)
+                raycastResult = World.Raycast(Camera.position, dir, 0.01f, 20f);
+            else
+                raycastResult = new RaycastResult((Vector3i)((Camera.position + dir * blocksFromCam) + Vector3.One / 2f));
+            Position = raycastResult.HitPos;
         }
 
         public void Render(Shader s)
         {
-            if (!Active)
+            if (!Active) //|| Raycast)
                 return;
 
             Matrix4 transform = Matrix4.CreateTranslation(Position);

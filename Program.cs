@@ -96,7 +96,7 @@ namespace BuildPlate_Editor
                 texturesPath += '/';
             World.textureBasePath = texturesPath;
 #if DEBUG
-            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json";
+            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\buildplate (1).json";
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json"; // fancy
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0eb3037-94c1-4a85-b0d7-7b8375c6f1b1.json"; // redstone
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0f771f0-a5d6-4acc-bd35-055e52548a20.json"; // igloo super fancy secret base

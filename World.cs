@@ -4,6 +4,7 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,7 +18,6 @@ namespace BuildPlate_Editor
     {
         public static int number { get; private set; }
 
-        // custom added reeds (was in .tga?)
         public static readonly ReadOnlyDictionary<string, string[]> texReplacements = new ReadOnlyDictionary<string, string[]>(new Dictionary<string, string[]>()
         {
             { "brick_block", new []{ "brick" } },
@@ -98,6 +98,7 @@ namespace BuildPlate_Editor
             { "cauldron", new []{ "cauldron_side" } },
             { "unlit_redstone_torch", new []{ "redstone_torch_off" } },
             { "cocoa", new []{ "cocoa_stage_2" } },
+            { "reeds", new []{ "reeds.tga" } },
             { "smooth_stone", new []{ "stone_slab_top" } }, // maybe not idk
             // terracotta
             { "white_glazed_terracotta", new []{ "glazed_terracotta_white" } },
@@ -380,22 +381,104 @@ namespace BuildPlate_Editor
             },
             { "double_plant", (int data) =>
                 {
-                    int plantType = data & 0b_0000;
-                    switch (plantType) {
-                        case 0:
-                            return new [] { "double_plant_sunflower_front" } ;
-                        case 1:
-                            return new [] { "double_plant_syringa_top" } ;
-                        case 2:
-                            return new [] { "double_plant_grass_carried" } ;
-                        case 3:
-                            return new [] { "double_plant_fern_carried" } ;
-                        case 4:
-                            return new [] { "double_plant_rose_bottom" } ;
-                        case 5:
-                            return new [] { "double_plant_paeonia_top" } ;
-                        default:
-                            return new [] { "double_plant_sunflower_front" } ;
+                    int plantType = data & 0b_0111;
+                    bool upper = Convert.ToBoolean((data & 0b_1000) >> 3);
+                    if (upper) {
+                        switch (plantType) {
+                            case 0: {
+                                    SystemPlus.Utils.DirectBitmap front = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "double_plant_sunflower_front.png", false);
+                                    SystemPlus.Utils.DirectBitmap top = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "double_plant_sunflower_top.png", false);
+                                    for (int i = 0; i < front.Data.Length; i++) {
+                                        Color c = Color.FromArgb(front.Data[i]);
+                                        if (c.A == 0)
+                                            front.Data[i] = top.Data[i];
+                                    }
+                                    front.Bitmap.Save(textureBasePath + "sunflower_top.png");
+                                    front.Dispose();
+                                    top.Dispose();
+                                    return new [] { "sunflower_top" } ;
+                                }
+                            case 1:
+                                return new [] { "double_plant_syringa_top.tga" } ;
+                            case 2: {
+                                    TargaImage img = new TargaImage(textureBasePath + "double_plant_grass_top.tga");
+                                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image, false);
+                                    img.Dispose();
+                                    for (int i = 0; i < db.Data.Length; i++)
+                                    {
+                                        Color c = Color.FromArgb(db.Data[i]);
+                                        db.Data[i] = Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                                    }
+                                    db.Bitmap.Save(textureBasePath + "double_plant_grass_top.png");
+                                    return new [] { "double_plant_grass_top" } ;
+                                }
+                            case 3:{
+                                    TargaImage img = new TargaImage(textureBasePath + "double_plant_fern_top.tga");
+                                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image, false);
+                                    img.Dispose();
+                                    for (int i = 0; i < db.Data.Length; i++)
+                                    {
+                                        Color c = Color.FromArgb(db.Data[i]);
+                                        db.Data[i] = Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                                    }
+                                    db.Bitmap.Save(textureBasePath + "double_plant_fern_top.png");
+                                    return new [] { "double_plant_fern_top" } ;
+                                }
+                            case 4:
+                                return new [] { "double_plant_rose_top" } ;
+                            case 5:
+                                return new [] { "double_plant_paeonia_top" } ;
+                            default: {
+                                    SystemPlus.Utils.DirectBitmap front = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "double_plant_sunflower_front.png", false);
+                                    SystemPlus.Utils.DirectBitmap top = SystemPlus.Utils.DirectBitmap.Load(textureBasePath + "double_plant_sunflower_top.png", false);
+                                    for (int i = 0; i < front.Data.Length; i++) {
+                                        Color c = Color.FromArgb(front.Data[i]);
+                                        if (c.A == 0)
+                                            front.Data[i] = top.Data[i];
+                                    }
+                                    front.Bitmap.Save(textureBasePath + "sunflower_top.png");
+                                    front.Dispose();
+                                    top.Dispose();
+                                    return new [] { "sunflower_top" } ;
+                                }
+                        }
+                    } else {
+                        switch (plantType) {
+                            case 0:
+                                return new [] { "double_plant_sunflower_bottom" } ;
+                            case 1:
+                                return new [] { "double_plant_syringa_bottom.tga" } ;
+                            case 2: {
+                                    TargaImage img = new TargaImage(textureBasePath + "double_plant_grass_bottom.tga");
+                                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image, false);
+                                    img.Dispose();
+                                    for (int i = 0; i < db.Data.Length; i++)
+                                    {
+                                        Color c = Color.FromArgb(db.Data[i]);
+                                        db.Data[i] = Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                                    }
+                                    db.Bitmap.Save(textureBasePath + "double_plant_grass_bottom.png");
+                                    return new [] { "double_plant_grass_bottom" } ;
+                                }
+                            case 3: {
+                                    TargaImage img = new TargaImage(textureBasePath + "double_plant_fern_bottom.tga");
+                                    SystemPlus.Utils.DirectBitmap db = SystemPlus.Utils.DirectBitmap.LoadFromBm(img.Image, false);
+                                    img.Dispose();
+                                    for (int i = 0; i < db.Data.Length; i++)
+                                    {
+                                        Color c = Color.FromArgb(db.Data[i]);
+                                        db.Data[i] = Color.FromArgb(c.A, 0, c.G, 0).ToArgb();
+                                    }
+                                    db.Bitmap.Save(textureBasePath + "double_plant_fern_bottom.png");
+                                    return new [] { "double_plant_fern_bottom" } ;
+                                }
+                            case 4:
+                                return new [] { "double_plant_rose_bottom" } ;
+                            case 5:
+                                return new [] { "double_plant_paeonia_bottom" } ;
+                            default:
+                                return new [] { "double_plant_sunflower_bottom" } ;
+                        }
                     }
                 }
             },
@@ -1353,8 +1436,8 @@ namespace BuildPlate_Editor
             { 8, (Vector3 pos, Vector3i cp, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // double plant/flower
                 {
                     Vector3 offset = new Vector3(0f, 0f, 0f);
-                    Vector3 size1 = new Vector3(0.01f, 0.8f, 1f);
-                    Vector3 size2 = new Vector3(1f, 0.8f, 0.01f);
+                    Vector3 size1 = new Vector3(0.01f, 1f, 1f);
+                    Vector3 size2 = new Vector3(1f, 1f, 0.01f);
                     CubeTex(tex[0], pos + offset, size1, ref vertices, ref triangles);
                     CubeTex(tex[0], pos + offset, size2, ref vertices, ref triangles);
                 }
@@ -2012,6 +2095,25 @@ namespace BuildPlate_Editor
 
             chunks[subchunk].palette = palette;
             chunks[subchunk].texId = taid;
+        }
+
+        public static RaycastResult Raycast(Vector3 from, Vector3 dir, float increment, float maxDistance)
+        {
+            float step = increment;
+            Vector3i lastPos = new Vector3i();
+
+            while (step < maxDistance) {
+                Vector3 pos = from + (dir * step);
+
+                if (GetRenderer((Vector3i)pos) != -1) // not air
+                    return new RaycastResult((Vector3i)pos, lastPos);
+                else
+                    step += increment;
+
+                lastPos = (Vector3i)pos;
+            }
+
+            return new RaycastResult(lastPos);
         }
 
         public static uint GetBlock(Vector3i pos)

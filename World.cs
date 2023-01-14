@@ -68,8 +68,10 @@ namespace BuildPlate_Editor
             { "golden_rail", new []{ "powered_rail" } },
             { "redstone_lamp", new []{ "redstone_lamp_off" } },
             { "lit_redstone_lamp", new []{ "redstone_lamp_on" } },
-            { "powered_repeater", new []{ "repeater_on", /*"redstone_torch_on"*/ } },
-            { "unpowered_repeater", new []{ "repeater_off", /*"redstone_torch_off"*/ } },
+            { "powered_repeater", new []{ "repeater_on", "redstone_torch_on" } },
+            { "unpowered_repeater", new []{ "repeater_off", "redstone_torch_off" } },
+            { "powered_comparator", new []{ "comparator_on",  } },
+            { "unpowered_comparator", new []{ "comparator_off",  } },
             { "dark_oak_fence_gate", new []{ "planks_big_oak" } },
             { "wheat", new []{ "wheat_stage_7" } },
             { "carrots", new []{ "carrots_stage_3" } },
@@ -102,9 +104,10 @@ namespace BuildPlate_Editor
             { "smooth_stone", new []{ "stone_slab_top" } }, // maybe not idk
             // terracotta
             { "white_glazed_terracotta", new []{ "glazed_terracotta_white" } },
+            { "red_glazed_terracotta", new []{ "glazed_terracotta_red" } },
+            { "black_glazed_terracotta", new []{ "glazed_terracotta_black" } },
             // flowers
             { "yellow_flower", new []{ "flower_dandelion" } },
-            { "red_flower", new []{ "flower_rose" } },
             { "buttercup", new []{ "flower_buttercup" } },
             // fence
             { "fence", new []{ "planks" } },
@@ -479,6 +482,37 @@ namespace BuildPlate_Editor
                             default:
                                 return new [] { "double_plant_sunflower_bottom" } ;
                         }
+                    }
+                }
+            },
+            { "red_flower", (int data) =>
+                {
+                    int type = data & 0b_1111;
+                    switch (type) {
+                        case 0:
+                            return new [] { "flower_rose" };
+                        case 1:
+                            return new [] { "flower_blue_orchid" };
+                        case 2:
+                            return new [] { "flower_allium" };
+                        case 3:
+                            return new [] { "flower_houstonia" };
+                        case 4:
+                            return new [] { "flower_tulip_red" };
+                        case 5:
+                            return new [] { "flower_tulip_orange" };
+                        case 6:
+                            return new [] { "flower_tulip_white" };
+                        case 7:
+                            return new [] { "flower_tulip_pink" };
+                        case 8:
+                            return new [] { "flower_oxeye_daisy" };
+                        case 9:
+                            return new [] { "flower_cornflower" };
+                        case 10:
+                            return new [] { "flower_lily_of_the_valley" };
+                        default:
+                            return new [] { "flower_rose" };
                     }
                 }
             },
@@ -1023,6 +1057,7 @@ namespace BuildPlate_Editor
             { "cactus", 21 },
             { "water", 22 },
             { "rail", 25 },
+            { "web", 27 },
         };
 
         public static readonly bool[] RendererIsFullBlockLookUp = new bool[]
@@ -1054,6 +1089,7 @@ namespace BuildPlate_Editor
             false,
             false, // rail
             false, // rail other
+            false,
         };
 
         public delegate void RenderBlock(Vector3 pos, Vector3i cp/*chunk pos, pre multiplied*/, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles);
@@ -1601,7 +1637,7 @@ namespace BuildPlate_Editor
                     }
 
                     uint tex = (uint)texA[0];
-                    uint torchTex = tex;//(uint)texA[1];
+                    uint torchTex = (uint)texA[1];
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)verts.Count;
                         if (p == 2 || p == 3) { // top/bottom
@@ -2010,6 +2046,25 @@ namespace BuildPlate_Editor
                 {
                     data &= 0b_0111; // filter out if is active
                     blockRenderers[25](pos, cp, texA, data, ref vertices, ref triangles);
+                }
+            },
+            { 27, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // cobweb
+                {
+                    uint tex = (uint)texA[0];
+                    Vector3 offset = -Vector3.One / 2f;
+                    for (int p = 0; p < 4; p++) {
+                        uint firstVertIndex = (uint)vertices.Count;
+                        vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.Cobweb.tris[p, 0]] + offset, VoxelData.voxelUvs[0], tex));
+                        vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.Cobweb.tris[p, 1]] + offset, VoxelData.voxelUvs[1], tex));
+                        vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.Cobweb.tris[p, 2]] + offset, VoxelData.voxelUvs[2], tex));
+                        vertices.Add(new Vertex(pos + VoxelData.voxelVerts[VoxelData.Cobweb.tris[p, 3]] + offset, VoxelData.voxelUvs[3], tex));
+                        triangles.Add(firstVertIndex);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 2);
+                        triangles.Add(firstVertIndex + 1);
+                        triangles.Add(firstVertIndex + 3);
+                    }
                 }
             },
         };

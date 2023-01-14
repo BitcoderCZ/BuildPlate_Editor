@@ -410,5 +410,32 @@ namespace BuildPlate_Editor
 				{1, 3, 0, 2}, // Bottom Face
 			};
 		}
+		public static class Cobweb
+        {
+			public static readonly Vector3[] verts = new Vector3[8] {
+				new Vector3(0.0f, 0.0f, 0.0f), // 0
+				new Vector3(1.0f, 0.0f, 0.0f), // 1
+				new Vector3(1.0f, 1.0f, 0.0f), // 2
+				new Vector3(0.0f, 1.0f, 0.0f), // 3
+				new Vector3(0.0f, 0.0f, 1.0f), // 4
+				new Vector3(1.0f, 0.0f, 1.0f), // 5
+				new Vector3(1.0f, 1.0f, 1.0f), // 6
+				new Vector3(0.0f, 1.0f, 1.0f) //  7
+			};
+			public static readonly int[,] tris = new int[,] {
+				{0, 3, 5, 6},
+				{5, 6, 0, 3},
+				{1, 2, 4, 7},
+				{4, 7, 1, 2},
+			};
+			/*public static readonly int[,] voxelTris = new int[6, 4] {
+				{0, 3, 1, 2}, // Back Face
+				{5, 6, 4, 7}, // Front Face
+				{3, 7, 2, 6}, // Top Face
+				{1, 5, 0, 4}, // Bottom Face
+				{4, 7, 0, 3}, // Left Face
+				{1, 2, 5, 6} // Right Face
+			};*/
+		}
 	}
 }

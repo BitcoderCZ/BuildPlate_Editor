@@ -18,12 +18,8 @@ namespace BuildPlate_Editor
         public static Window Window;
         public static string baseDir;
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            // this will run on console close
-            handler = new ConsoleEventDelegate(ConsoleEventCallback);
-            SetConsoleCtrlHandler(handler, true);
-
             // Get base path (.exe location)
             string myExecutable = Assembly.GetEntryAssembly().Location;
 
@@ -36,7 +32,7 @@ namespace BuildPlate_Editor
                 Console.WriteLine("You can also do this for .plate and .plate64");
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey(true);
-                return;
+                return (int)EXITCODE.Normal;
             }
 
             baseDir = Path.GetDirectoryName(myExecutable) + "\\";
@@ -72,7 +68,7 @@ namespace BuildPlate_Editor
                 }
             }
             else
-                Console.WriteLine("Ok :(, I won't aks again");
+                Console.WriteLine("Ok :(, I won't ask again");
 
             File.WriteAllBytes(baseDir + "askedForDefault", new byte[0]);
 
@@ -82,21 +78,21 @@ namespace BuildPlate_Editor
                 Console.WriteLine("texturesPath.txt doen't exist");
                 Console.WriteLine($"Extract mce resource pack 2 times and set path to {{path}}/textures/blocks/");
                 Console.ReadKey(true);
-                return;
+                return (int)EXITCODE.TexturesFile_Existance;
             }
             string texturesPath = File.ReadAllText(baseDir + "texturesPath.txt");
             if (texturesPath == string.Empty || !Directory.Exists(texturesPath)) {
                 Console.WriteLine($"path inside texturesPath.txt ({texturesPath}) doesn't exist");
                 Console.WriteLine($"Extract mce resource pack 2 times and set path to {{path}}/textures/blocks/");
                 Console.ReadKey(true);
-                return;
+                return (int)EXITCODE.TexturesFile_Path;
             }
             char lastChar = texturesPath[texturesPath.Length - 1];
             if (lastChar != '\\' && lastChar != '/')
                 texturesPath += '/';
             World.textureBasePath = texturesPath;
 #if DEBUG
-            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\buildplate (1).json";
+            World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0eb3037-94c1-4a85-b0d7-7b8375c6f1b1.json";
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\411398a6-5810-43a0-824c-27a9077a9ac3.json"; // fancy
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0eb3037-94c1-4a85-b0d7-7b8375c6f1b1.json"; // redstone
             //World.targetFilePath = @"C:\Users\Tomas\Desktop\Project Earth\Api\data\buildplates\c0f771f0-a5d6-4acc-bd35-055e52548a20.json"; // igloo super fancy secret base
@@ -107,23 +103,24 @@ namespace BuildPlate_Editor
             if (args != null && args.Length > 0 && File.Exists(string.Join(" ", args)) && string.Join(" ", args).Split('.').Length > 1) {
                 string truePath = new FileInfo(string.Join(" ", args)).FullName;
                 Console.WriteLine(truePath);
-                string extension = truePath.Split('.').Last();
-                if (extension == "json" || extension == "plate" || extension == "plate64") {
+                string _extension = truePath.Split('.').Last();
+                if (_extension == "json" || _extension == "plate" || _extension == "plate64") {
                     World.targetFilePath = truePath;
                     goto check;
                 }
             }
 
             string buildPlate = Console.ReadLine();
+            string extension = Path.GetExtension(buildPlate);
             if (!File.Exists(buildPlate)) {
                 Console.WriteLine($"build plate \"{buildPlate}\" doesn't exist");
                 Console.ReadKey(true);
-                return;
-            } else if (Path.GetExtension(buildPlate) == ".json" || Path.GetExtension(buildPlate) == ".plate" 
-                || Path.GetExtension(buildPlate) == ".plate64") {
+                return (int)EXITCODE.Failed_BuildPlate_Existance;
+            } else if (extension != ".json" && extension != ".plate" 
+                && extension != ".plate64") {
                 Console.WriteLine($"\"{Path.GetExtension(buildPlate)}\" isn't valid buildplate extension, valid: .json, .plate, .plate64");
                 Console.ReadKey(true);
-                return;
+                return (int)EXITCODE.Failed_BuildPlate_Extension;
             }
             World.targetFilePath = buildPlate;
 #endif
@@ -135,7 +132,7 @@ namespace BuildPlate_Editor
                 Console.WriteLine($"Couldn't parse \"{World.targetFilePath}\", Make sure it's valid build plate file.");
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey(true);
-                return;
+                return (int)EXITCODE.Failed_BuildPlate_Parse;
             }
 
             Window = new Window();
@@ -148,6 +145,8 @@ namespace BuildPlate_Editor
                 else if (int.TryParse(version.Split(' ')[0].Split('.')[1], out int subVer) && mainVer == 4 && subVer < 5)
                     LowVersion();
             Window.Run(60d);
+
+            return (int)EXITCODE.Normal;
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -167,19 +166,5 @@ namespace BuildPlate_Editor
             if (Console.ReadKey(true).Key != ConsoleKey.Enter)
                 Util.Exit(EXITCODE.OpenGL_LowVersion);
         }
-
-        // Handle on close event
-        static bool ConsoleEventCallback(int eventType)
-        {
-            if (eventType == 2) { // on exit
-                Util.Exit(EXITCODE.Normal);
-            }
-            return false;
-        }
-        static ConsoleEventDelegate handler;   // Keeps it from getting garbage collected
-                                               
-        private delegate bool ConsoleEventDelegate(int eventType);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
     }
 }

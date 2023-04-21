@@ -252,6 +252,91 @@ namespace BuildPlate_Editor
 
         public static char ToLower(this char c) => c.ToString().ToLower()[0];
 
+        public static void SetXLow(this Vector2[] array, float x)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X < 0.5f)
+                    array[i] = new Vector2(x, array[i].Y);
+        }
+        public static void SetXHigh(this Vector2[] array, float x)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X >= 0.5f)
+                    array[i] = new Vector2(x, array[i].Y);
+        }
+        public static void SetYLow(this Vector2[] array, float y)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Y < 0.5f)
+                    array[i] = new Vector2(array[i].X, y);
+        }
+        public static void SetYHigh(this Vector2[] array, float y)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Y >= 0.5f)
+                    array[i] = new Vector2(array[i].X, y);
+        }
+
+        public static void SetXLow(this Vector3[] array, float x)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X < 0.5f)
+                    array[i] = new Vector3(x, array[i].Y, array[i].Z);
+        }
+        public static void SetXHigh(this Vector3[] array, float x)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X >= 0.5f)
+                    array[i] = new Vector3(x, array[i].Y, array[i].Z);
+        }
+        public static void SetZLow(this Vector3[] array, float z)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Z < 0.5f)
+                    array[i] = new Vector3(array[i].X, array[i].Y, z);
+        }
+        public static void SetZHigh(this Vector3[] array, float z)
+        {
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Z >= 0.5f)
+                    array[i] = new Vector3(array[i].X, array[i].Y, z);
+        }
+
+        public static void FlipX(this Vector2[] array)
+        {
+            float low = 0f;
+            float high = 1f;
+
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X < 0.5f)
+                    low = array[i].X;
+                else
+                    high = array[i].X;
+
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].X < 0.5f)
+                    array[i] = new Vector2(high, array[i].Y);
+                else
+                    array[i] = new Vector2(low, array[i].Y);
+        }
+        public static void FlipY(this Vector2[] array)
+        {
+            float low = 0f;
+            float high = 1f;
+
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Y < 0.5f)
+                    low = array[i].Y;
+                else
+                    high = array[i].Y;
+
+            for (int i = 0; i < array.Length; i++)
+                if (array[i].Y < 0.5f)
+                    array[i] = new Vector2(array[i].X, high);
+                else
+                    array[i] = new Vector2(array[i].X, low);
+        }
+
         // Set Foregroun
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]

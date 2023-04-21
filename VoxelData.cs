@@ -412,30 +412,123 @@ namespace BuildPlate_Editor
 		}
 		public static class Cobweb
         {
-			public static readonly Vector3[] verts = new Vector3[8] {
-				new Vector3(0.0f, 0.0f, 0.0f), // 0
-				new Vector3(1.0f, 0.0f, 0.0f), // 1
-				new Vector3(1.0f, 1.0f, 0.0f), // 2
-				new Vector3(0.0f, 1.0f, 0.0f), // 3
-				new Vector3(0.0f, 0.0f, 1.0f), // 4
-				new Vector3(1.0f, 0.0f, 1.0f), // 5
-				new Vector3(1.0f, 1.0f, 1.0f), // 6
-				new Vector3(0.0f, 1.0f, 1.0f) //  7
-			};
 			public static readonly int[,] tris = new int[,] {
 				{0, 3, 5, 6},
 				{5, 6, 0, 3},
 				{1, 2, 4, 7},
 				{4, 7, 1, 2},
 			};
-			/*public static readonly int[,] voxelTris = new int[6, 4] {
-				{0, 3, 1, 2}, // Back Face
-				{5, 6, 4, 7}, // Front Face
-				{3, 7, 2, 6}, // Top Face
-				{1, 5, 0, 4}, // Bottom Face
-				{4, 7, 0, 3}, // Left Face
-				{1, 2, 5, 6} // Right Face
-			};*/
+		}
+		public static class Redstone
+		{
+			public const float DefaultOffset = 0.01f;
+			public const float toDot = 0.3125f;
+			public const float toDot2 = 1f - toDot;
+			public static readonly Vector3[] verts = new Vector3[]
+			{
+				new Vector3(0.0f, DefaultOffset, 0.0f), // 0
+				new Vector3(1.0f, DefaultOffset, 0.0f), // 1
+				new Vector3(0.0f, DefaultOffset, 1.0f), // 2
+				new Vector3(1.0f, DefaultOffset, 1.0f), // 3
+			};
+			public static readonly Vector3[] vertsSide = new Vector3[]
+			{
+				new Vector3(DefaultOffset, 0.0f, 0.0f),
+				new Vector3(DefaultOffset, 1.0f, 0.0f),
+				new Vector3(DefaultOffset, 0.0f, 1.0f),
+				new Vector3(DefaultOffset, 1.0f, 1.0f)
+			};
+			public static readonly int[,] tris = new int[2, 4] {
+				{0, 2, 1, 3}, // Top Face
+				{1, 3, 0, 2}, // Bottom Face
+			};
+			public static readonly int[,] trisSide = new int[2, 4] {
+				{2, 3, 0, 1},
+				{0, 1, 2, 3},
+			};
+			public static readonly Vector2[] uvsSide = new Vector2[4] {
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(0.0f, 1.0f)
+			};
+		}
+		public static class Lever_Base
+		{
+			public const float X = 0.3125f;
+			public const float X2 = 1f - X;
+			public const float Y = 0f;
+			public const float Y2 = 0.1875f;
+			public const float Z = 0.25f;
+			public const float Z2 = 1f - Z;
+			public static readonly Vector3[] verts = new Vector3[8] {
+				new Vector3(X, Y, Z), // 0
+				new Vector3(X2, Y, Z), // 1
+				new Vector3(X2, Y2, Z), // 2
+				new Vector3(X, Y2, Z), // 3
+				new Vector3(X, Y, Z2), // 4
+				new Vector3(X2, Y, Z2), // 5
+				new Vector3(X2, Y2, Z2), // 6
+				new Vector3(X, Y2, Z2) //  7
+			};
+			public static readonly Vector2[,] uvs = new Vector2[3,4] { // Z Y X
+				{
+					new Vector2(X, Y),
+					new Vector2(X, Y2),
+					new Vector2(X2, Y),
+					new Vector2(X2, Y2)
+				},
+				{
+					new Vector2(X, Z),
+					new Vector2(X, Z2),
+					new Vector2(X2, Z),
+					new Vector2(X2, Z2)
+				},
+				{
+					new Vector2(Z, Y),
+					new Vector2(Z, Y2),
+					new Vector2(Z2, Y),
+					new Vector2(Z2, Y2)
+				},
+			};
+		}
+		public static class Lever_Top
+		{
+			public const float X = 0.4375f;
+			public const float X2 = 1f - X;
+			public const float Y = 0f;
+			public const float Y2 = 0.625f;
+			public const float Y3 = Y2 - 0.125f;
+			public static readonly Vector3[] verts = new Vector3[8] {
+				new Vector3(X, Y, X), // 0
+				new Vector3(X2, Y, X), // 1
+				new Vector3(X2, Y2, X), // 2
+				new Vector3(X, Y2, X), // 3
+				new Vector3(X, Y, X2), // 4
+				new Vector3(X2, Y, X2), // 5
+				new Vector3(X2, Y2, X2), // 6
+				new Vector3(X, Y2, X2) //  7
+			};
+			public static readonly Vector2[,] uvs = new Vector2[3, 4] { // Z Y X
+				{
+					new Vector2(X, Y),
+					new Vector2(X, Y2),
+					new Vector2(X2, Y),
+					new Vector2(X2, Y2)
+				},
+				{
+					new Vector2(X, Y3),
+					new Vector2(X, Y2),
+					new Vector2(X2, Y3),
+					new Vector2(X2, Y2)
+				},
+				{
+					new Vector2(X, Y),
+					new Vector2(X, Y2),
+					new Vector2(X2, Y),
+					new Vector2(X2, Y2)
+				},
+			};
 		}
 	}
 }

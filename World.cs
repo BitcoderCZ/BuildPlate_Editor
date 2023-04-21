@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SystemPlus;
+using SystemPlus.Utils;
 using static BuildPlate_Editor.Util;
 
 namespace BuildPlate_Editor
@@ -62,7 +63,6 @@ namespace BuildPlate_Editor
             { "hay_block", new []{ "hay_block_side" } },
             { "melon_block", new []{ "melon_side" } },
             { "pumpkin", new []{ "pumpkin_side" } },
-            { "redstone_wire", new []{ "redstone_dust_line" } },
             { "quartz_block", new []{ "quartz_block_side" } }, // todo
             { "redstone_dust_dot", new []{ "redstone_dust_cross" } },
             { "golden_rail", new []{ "powered_rail" } },
@@ -101,6 +101,7 @@ namespace BuildPlate_Editor
             { "unlit_redstone_torch", new []{ "redstone_torch_off" } },
             { "cocoa", new []{ "cocoa_stage_2" } },
             { "reeds", new []{ "reeds.tga" } },
+            { "lever", new []{ "cobblestone", "lever" } },
             { "smooth_stone", new []{ "stone_slab_top" } }, // maybe not idk
             // terracotta
             { "white_glazed_terracotta", new []{ "glazed_terracotta_white" } },
@@ -121,6 +122,7 @@ namespace BuildPlate_Editor
             // button
             { "jungle_button", new []{ "planks_jungle" } },
             { "wooden_button", new []{ "planks_oak" } },
+            { "birch_button", new []{ "planks_birch" } },
         });
 
         public static readonly Dictionary<string, Func<int, string[]>> specialTextureLoad = new Dictionary<string, Func<int, string[]>>() // texture => { data, return final texture}
@@ -872,6 +874,34 @@ namespace BuildPlate_Editor
                     }
                 }
             },
+            { "redstone_wire", (int data) =>
+                {
+                    int power = data & 0b_1111;
+                    string crossName = $"redstone_dust_cross_{power}.png";
+                    string lineName = $"redstone_dust_line_{power}.png";
+                    Vector3 multiplier = Vector3.Lerp(new Vector3(0.25f, 0f, 0f), new Vector3(1f, 0f, 0f), power / 15f);
+                    
+                    DirectBitmap cross = DirectBitmap.Load(textureBasePath + "redstone_dust_cross.png", false);
+                    DirectBitmap line = DirectBitmap.Load(textureBasePath + "redstone_dust_line.png", false);
+                    for (int i = 0; i < cross.Data.Length; i++)
+                    {
+                        Color c = Color.FromArgb(cross.Data[i]);
+                        cross.Data[i] = Color.FromArgb(c.A, (byte)(((c.R / 255f) * multiplier.X) * 255f), (byte)(((c.G / 255f) * multiplier.Y) * 255f),
+                            (byte)(((c.B / 255f) * multiplier.Z) * 255f)).ToArgb();
+			        }
+                    for (int i = 0; i < line.Data.Length; i++)
+                    {
+                        Color c = Color.FromArgb(line.Data[i]);
+                        line.Data[i] = Color.FromArgb(c.A, (byte)(((c.R / 255f) * multiplier.X) * 255f), (byte)(((c.G / 255f) * multiplier.Y) * 255f),
+                            (byte)(((c.B / 255f) * multiplier.Z) * 255f)).ToArgb();
+                    }
+                    cross.Bitmap.Save(textureBasePath + crossName);
+                    line.Bitmap.Save(textureBasePath + lineName);
+                    cross.Dispose();
+                    line.Dispose();
+                    return new [] { crossName, lineName };
+                }
+            },
             // doors
             { "iron_door", (int data) =>
                 {
@@ -1058,6 +1088,8 @@ namespace BuildPlate_Editor
             { "water", 22 },
             { "rail", 25 },
             { "web", 27 },
+            { "redstone_wire", 28 },
+            { "lever", 29 },
         };
 
         public static readonly bool[] RendererIsFullBlockLookUp = new bool[]
@@ -1090,6 +1122,7 @@ namespace BuildPlate_Editor
             false, // rail
             false, // rail other
             false,
+            false, // redstone wire
         };
 
         public delegate void RenderBlock(Vector3 pos, Vector3i cp/*chunk pos, pre multiplied*/, int[] tex, int data, ref List<Vertex> vertices, ref List<uint> triangles);
@@ -1627,13 +1660,10 @@ namespace BuildPlate_Editor
                     }
                     else if (dir == 1) {
                         mat = Matrix3.CreateRotationY(1.5708f); // 90 degrees
-                        offset.Z += 1f;
                     } else if (dir == 2) {
                         mat = Matrix3.CreateRotationY(3.14159f); // 180 degrees
-                        offset.Z += 1f;
                     } else {
                         mat = Matrix3.CreateRotationY(4.71239f); // 270 degrees
-                        offset.X += 1f;
                     }
 
                     uint tex = (uint)texA[0];
@@ -1641,15 +1671,15 @@ namespace BuildPlate_Editor
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)verts.Count;
                         if (p == 2 || p == 3) { // top/bottom
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] * mat + offset, VoxelData.voxelUvs[0], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] * mat + offset, VoxelData.voxelUvs[1], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] * mat + offset, VoxelData.voxelUvs[2], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] * mat + offset, VoxelData.voxelUvs[3], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.voxelUvs[0], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.voxelUvs[1], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.voxelUvs[2], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.voxelUvs[3], tex));
                         } else {
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] * mat + offset, VoxelData.Repeater.sideUvs[0], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] * mat + offset, VoxelData.Repeater.sideUvs[1], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] * mat + offset, VoxelData.Repeater.sideUvs[2], tex));
-                            verts.Add(new Vertex(pos + VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] * mat + offset, VoxelData.Repeater.sideUvs[3], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Repeater.sideUvs[0], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Repeater.sideUvs[1], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Repeater.sideUvs[2], tex));
+                            verts.Add(new Vertex(pos + (VoxelData.Repeater.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Repeater.sideUvs[3], tex));
                         }
                         tris.Add(firstVertIndex);
                         tris.Add(firstVertIndex + 1);
@@ -1659,25 +1689,63 @@ namespace BuildPlate_Editor
                         tris.Add(firstVertIndex + 3);
                     }
 
+                    // first torch
                     offset = -Vector3.One / 2f;
+                    offset.Z += 0.3125f;
+
                     for (int p = 0; p < 6; p++) {
                         uint firstVertIndex = (uint)verts.Count;
                         if (p == 2) { // top
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsTop[0], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsTop[1], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsTop[2], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsTop[3], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsTop[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsTop[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsTop[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsTop[3], torchTex));
                         } else if (p == 3) { // bottom
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsBottom[0], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsBottom[1], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsBottom[2], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsBottom[3], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsBottom[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsBottom[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsBottom[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsBottom[3], torchTex));
                         }
                         else {
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset, VoxelData.Torch.uVsSide[0], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset, VoxelData.Torch.uVsSide[1], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset, VoxelData.Torch.uVsSide[2], torchTex));
-                            verts.Add(new Vertex(pos + VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset, VoxelData.Torch.uVsSide[3], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsSide[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsSide[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsSide[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsSide[3], torchTex));
+                        }
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
+
+                    // second torch
+                    offset = -Vector3.One / 2f;
+                    offset.Z += 0.0625f;
+
+                    int delay = (data & 0b_1100) >> 2;
+
+                    offset.Z -= 0.125f * delay;
+
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)verts.Count;
+                        if (p == 2) { // top
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsTop[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsTop[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsTop[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsTop[3], torchTex));
+                        } else if (p == 3) { // bottom
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsBottom[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsBottom[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsBottom[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsBottom[3], torchTex));
+                        }
+                        else {
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 0]] + offset) * mat, VoxelData.Torch.uVsSide[0], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 1]] + offset) * mat, VoxelData.Torch.uVsSide[1], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 2]] + offset) * mat, VoxelData.Torch.uVsSide[2], torchTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Torch.verts[VoxelData.voxelTris[p, 3]] + offset) * mat, VoxelData.Torch.uVsSide[3], torchTex));
                         }
                         tris.Add(firstVertIndex);
                         tris.Add(firstVertIndex + 1);
@@ -2064,6 +2132,252 @@ namespace BuildPlate_Editor
                         triangles.Add(firstVertIndex + 2);
                         triangles.Add(firstVertIndex + 1);
                         triangles.Add(firstVertIndex + 3);
+                    }
+                }
+            },
+            { 28, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> vertices, ref List<uint> triangles) => // redstone wire
+                {
+                    uint crossTex = (uint)texA[0];
+                    uint wireTex = (uint)texA[1];
+
+                    Vector3i[] offsets = new Vector3i[4] { new Vector3i(-1, 0, 0), new Vector3i(1, 0, 0), new Vector3i(0, 0, -1), new Vector3i(0, 0, 1) };
+                    int[] presence = new int[4];
+                    int[] validRenderers = new int[] { 28, 14, 16, 23 };
+
+                    Vector3i iPos = (Vector3i)pos;
+
+                    for (int i = 0; i < 4; i++)
+                        if (GetRenderer(iPos + cp + offsets[i] + Vector3i.UnitY) == 28)
+                            presence[i] = 2;
+                        else if (GetRenderer(iPos + cp + offsets[i] - Vector3i.UnitY) == 28)
+                            presence[i] = 1;
+                        else {
+                            int r = GetRenderer(iPos + cp + offsets[i]);
+                            for (int j = 0; j < validRenderers.Length; j++)
+                                if (r == validRenderers[j]) {
+                                    presence[i] = 1;
+                                    break;
+                                }
+                        }
+
+                    // if connected to one side or 2 opposite sides, draw wire
+                    if (((presence[0] > 0 || presence[1] > 0) && presence[2] < 1 && presence[3] < 1)
+                        || ((presence[2] > 0 || presence[3] > 0) && presence[0] < 1 && presence[1] < 1)) {
+                        Vector3 offset = -Vector3.One / 2f;
+                        Matrix3 transform = Matrix3.Identity;
+                        if (presence[2] > 0 || presence[3] > 0)
+                            transform = Matrix3.CreateRotationY(1.5708f); // 90 degrees
+                        for (int p = 0; p < 2; p++) {
+                            uint firstVertIndex = (uint)vertices.Count;
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.verts[VoxelData.Redstone.tris[p, 0]] + offset) * transform, VoxelData.voxelUvs[0], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.verts[VoxelData.Redstone.tris[p, 1]] + offset) * transform, VoxelData.voxelUvs[1], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.verts[VoxelData.Redstone.tris[p, 2]] + offset) * transform, VoxelData.voxelUvs[2], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.verts[VoxelData.Redstone.tris[p, 3]] + offset) * transform, VoxelData.voxelUvs[3], wireTex));
+                            triangles.Add(firstVertIndex);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 3);
+                        }
+                    } else {
+                        Vector3[] verts = VoxelData.Redstone.verts.Cloned();
+                        Vector2[] uvs = VoxelData.voxelUvs.Cloned();
+
+                        // if not connected on a side, crop verts and uvs
+                        if (presence[0] < 1) {
+                            verts.SetXLow(VoxelData.Redstone.toDot);
+                            uvs.SetXLow(VoxelData.Redstone.toDot);
+                        }
+                        if (presence[1] < 1) {
+                            verts.SetXHigh(VoxelData.Redstone.toDot2);
+                            uvs.SetXHigh(VoxelData.Redstone.toDot2);
+                        }
+                        if (presence[2] < 1) {
+                            verts.SetZLow(VoxelData.Redstone.toDot);
+                            uvs.SetYLow(VoxelData.Redstone.toDot);
+                        }
+                        if (presence[3] < 1) {
+                            verts.SetZHigh(VoxelData.Redstone.toDot2);
+                            uvs.SetYHigh(VoxelData.Redstone.toDot2);
+                        }
+
+                        Vector3 offset = -Vector3.One / 2f;
+                        for (int p = 0; p < 2; p++) {
+                            uint firstVertIndex = (uint)vertices.Count;
+                            if (p == 1)
+                                uvs.FlipX();
+                            vertices.Add(new Vertex(pos + verts[VoxelData.Redstone.tris[p, 0]] + offset, uvs[0], crossTex));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.Redstone.tris[p, 1]] + offset, uvs[1], crossTex));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.Redstone.tris[p, 2]] + offset, uvs[2], crossTex));
+                            vertices.Add(new Vertex(pos + verts[VoxelData.Redstone.tris[p, 3]] + offset, uvs[3], crossTex));
+                            triangles.Add(firstVertIndex);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 3);
+                        }
+                    }
+
+                    // draw redstone on side of blocks
+                    for (int i = 0; i < presence.Length; i++)
+                    {
+                        if (presence[i] != 2)
+                            continue;
+                        Vector3 offset = -Vector3.One / 2f;
+                        Matrix3 transform = Matrix3.Identity;
+                        if (i == 1)
+                            transform = Matrix3.CreateRotationY(3.14159f); // 180 degrees
+                        else if (i == 2)
+                            transform = Matrix3.CreateRotationY(-1.5708f); // -90 degrees
+                        else if (i == 3)
+                            transform = Matrix3.CreateRotationY(1.5708f); // 90 degrees
+                        for (int p = 0; p < 2; p++) {
+                            uint firstVertIndex = (uint)vertices.Count;
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.vertsSide[VoxelData.Redstone.trisSide[p, 0]] + offset) * transform, VoxelData.Redstone.uvsSide[0], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.vertsSide[VoxelData.Redstone.trisSide[p, 1]] + offset) * transform, VoxelData.Redstone.uvsSide[1], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.vertsSide[VoxelData.Redstone.trisSide[p, 2]] + offset) * transform, VoxelData.Redstone.uvsSide[2], wireTex));
+                            vertices.Add(new Vertex(pos + (VoxelData.Redstone.vertsSide[VoxelData.Redstone.trisSide[p, 3]] + offset) * transform, VoxelData.Redstone.uvsSide[3], wireTex));
+                            triangles.Add(firstVertIndex);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 2);
+                            triangles.Add(firstVertIndex + 1);
+                            triangles.Add(firstVertIndex + 3);
+                        }
+                    }
+                }
+            },
+            { 29, (Vector3 pos, Vector3i cp, int[] texA, int data, ref List<Vertex> verts, ref List<uint> tris) => // lever
+                {
+                    Vector3 offset = -Vector3.One / 2f;
+                    Matrix3 transform = Matrix3.Identity;
+                    uint stoneTex = (uint)texA[0];
+                    uint leverTex = (uint)texA[1];
+
+                    bool open = Convert.ToBoolean((data & 0b_1000) >> 3);
+                    int dir = data & 0b_0111;
+
+                    if (dir == 5 || dir == 6)
+                        transform = Matrix3.CreateRotationX(3.14159f); // 180 degrees
+                    
+                    if (dir == 1)
+                        transform *= Matrix3.CreateRotationX(1.5708f); // -90 degrees
+                    else if (dir == 2)
+                        transform *= Matrix3.CreateRotationX(-1.5708f); // 90 degrees
+                    else if (dir == 3)
+                        transform *= Matrix3.CreateRotationX(1.5708f); // 90 degrees
+                    else if (dir == 4)
+                        transform *= Matrix3.CreateRotationX(-1.5708f); // -90 degrees
+
+                    if (dir < 3 || dir == 6)
+                        transform *= Matrix3.CreateRotationY(1.5708f); // 90 degrees
+
+                    // when placed, facing towards player
+                    for (int p = 0; p < 6; p++) {
+                        uint firstVertIndex = (uint)verts.Count;
+                        int uvIndex = p / 2;
+                        verts.Add(new Vertex(pos + (VoxelData.Lever_Base.verts[VoxelData.voxelTris[p, 0]] + offset) * transform, VoxelData.Lever_Base.uvs[uvIndex, 0], stoneTex));
+                        verts.Add(new Vertex(pos + (VoxelData.Lever_Base.verts[VoxelData.voxelTris[p, 1]] + offset) * transform, VoxelData.Lever_Base.uvs[uvIndex, 1], stoneTex));
+                        verts.Add(new Vertex(pos + (VoxelData.Lever_Base.verts[VoxelData.voxelTris[p, 2]] + offset) * transform, VoxelData.Lever_Base.uvs[uvIndex, 2], stoneTex));
+                        verts.Add(new Vertex(pos + (VoxelData.Lever_Base.verts[VoxelData.voxelTris[p, 3]] + offset) * transform, VoxelData.Lever_Base.uvs[uvIndex, 3], stoneTex));
+                        tris.Add(firstVertIndex);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 2);
+                        tris.Add(firstVertIndex + 1);
+                        tris.Add(firstVertIndex + 3);
+                    }
+
+                    if (dir >= 1 && dir <= 4) {
+                        transform = Matrix3.Identity;
+                        Vector3 offset2 = Vector3.Zero;
+
+                        if (open) {
+                            if (dir == 2 || dir == 4) {
+                                offset2.Y -= 0.25f;
+                                transform *= Matrix3.CreateRotationX(-0.5235f);
+                            } else {
+                                offset2.Y -= 0.25f;
+                                transform *= Matrix3.CreateRotationX(0.5235f);
+                            }
+                        }
+                        else {
+                            if (dir == 2 || dir == 4) {
+                                offset2.Y += 0.25f;
+                                transform *= Matrix3.CreateRotationX(0.5235f);
+                            } else {
+                                offset2.Y += 0.25f;
+                                transform *= Matrix3.CreateRotationX(-0.5235f);
+                            }
+                        }
+
+                        if (dir < 3)
+                            transform *= Matrix3.CreateRotationY(1.5708f); // 90 degrees
+
+                        if (dir == 1)
+                            transform *= Matrix3.CreateRotationZ(-1.5708f); // -90 degrees
+                        else if (dir == 2)
+                            transform *= Matrix3.CreateRotationZ(1.5708f); // 90 degrees
+                        else if (dir == 3)
+                            transform *= Matrix3.CreateRotationX(1.5708f); // 90 degrees
+                        else
+                            transform *= Matrix3.CreateRotationX(-1.5708f); // -90 degrees
+                        
+                        for (int p = 0; p < 6; p++) {
+                            uint firstVertIndex = (uint)verts.Count;
+                            int uvIndex = p / 2;
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 0]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 0], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 1]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 1], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 2]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 2], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 3]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 3], leverTex));
+                            tris.Add(firstVertIndex);
+                            tris.Add(firstVertIndex + 1);
+                            tris.Add(firstVertIndex + 2);
+                            tris.Add(firstVertIndex + 2);
+                            tris.Add(firstVertIndex + 1);
+                            tris.Add(firstVertIndex + 3);
+                        }
+                    } else {
+                        Vector3 offset2 = Vector3.Zero;
+                        if (open) {
+                            if (dir == 5)
+                                offset2.Z -= 0.25f;
+                            else
+                                offset2.Z += 0.25f;
+                            offset2 *= transform;
+                            transform = Matrix3.CreateRotationX(0.5235f);
+                        }
+                        else {
+                            if (dir == 5)
+                                offset2.Z += 0.25f;
+                            else
+                                offset2.Z -= 0.25f;
+                            offset2 *= transform;
+                            transform = Matrix3.CreateRotationX(-0.5235f);
+                        }
+
+                        if (dir == 0 || dir == 6)
+                            transform *= Matrix3.CreateRotationY(1.5708f); // 90 degrees
+
+                        if (dir == 5 || dir == 6)
+                            transform *= Matrix3.CreateRotationZ(3.14159f); // 180 degrees
+
+                        for (int p = 0; p < 6; p++) {
+                            uint firstVertIndex = (uint)verts.Count;
+                            int uvIndex = p / 2;
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 0]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 0], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 1]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 1], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 2]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 2], leverTex));
+                            verts.Add(new Vertex(pos + (VoxelData.Lever_Top.verts[VoxelData.voxelTris[p, 3]] + offset) * transform + offset2, VoxelData.Lever_Top.uvs[uvIndex, 3], leverTex));
+                            tris.Add(firstVertIndex);
+                            tris.Add(firstVertIndex + 1);
+                            tris.Add(firstVertIndex + 2);
+                            tris.Add(firstVertIndex + 2);
+                            tris.Add(firstVertIndex + 1);
+                            tris.Add(firstVertIndex + 3);
+                        }
                     }
                 }
             },
